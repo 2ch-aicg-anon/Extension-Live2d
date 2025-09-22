@@ -133,13 +133,13 @@ const defaultSettings = {
     // Auto animations settings
     autoAnimationsEnabled: true,
     autoEyeCenterWeight: 0.7,
-    autoEyeAmplitudeCenter: 1.0,
-    autoEyeAmplitudePeripheral: 10.0,
+    autoEyeAmplitudeCenter: 0.05,
+    autoEyeAmplitudePeripheral: 0.2,
     autoEyeFixationMin: 200,
     autoEyeFixationMax: 2000,
-    autoEyeMicrosaccadeAmplitude: 0.5,
+    autoEyeMicrosaccadeAmplitude: 0.01,
     autoEyeMicrosaccadeFrequency: 0.3,
-    autoBreathAmplitude: 1.0,
+    autoBreathAmplitude: 0.24,
     autoBreathSpeed: 0.5,
 
     // Character model mapping

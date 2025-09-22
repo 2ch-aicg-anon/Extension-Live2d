@@ -819,21 +819,27 @@ async function autoEyeMovement(character) {
             const fixationTime = FIXATION_TIME_MIN + Math.random() * (FIXATION_TIME_MAX - FIXATION_TIME_MIN);
             const startFixationTime = Date.now();
             
-            while (Date.now() - startFixationTime < fixationTime) {
-                // Добавляем микросаккады с учётом частоты
-                if (Math.random() < MICROSACCADE_FREQUENCY && MICROSACCADE_AMOUNT > 0) {
-                    const microsaccadeX = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
-                    const microsaccadeY = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
+            // Если микросаккады отключены, просто ждём время фиксации
+            if (MICROSACCADE_FREQUENCY === 0 || MICROSACCADE_AMOUNT === 0) {
+                await delay(fixationTime);
+            } else {
+                // Микросаккады включены - обновляем позицию каждые 50мс
+                while (Date.now() - startFixationTime < fixationTime) {
+                    if (Math.random() < MICROSACCADE_FREQUENCY) {
+                        const microsaccadeX = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
+                        const microsaccadeY = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
+                        
+                        model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
+                        model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
+                        console.debug(DEBUG_PREFIX, `Microsaccade: X=${(currentX + microsaccadeX).toFixed(3)}, Y=${(currentY + microsaccadeY).toFixed(3)}`);
+                    } else {
+                        // Возвращаемся к текущей позиции
+                        model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
+                        model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
+                    }
                     
-                    model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
-                    model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
-                } else {
-                    // Возвращаемся к текущей позиции
-                    model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
-                    model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
+                    await delay(50);
                 }
-                
-                await delay(50);
             }
             
         } catch (error) {
