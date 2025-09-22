@@ -89,6 +89,12 @@ import {
     onAutoEyeFixationMaxChange,
     onAutoBreathAmplitudeChange,
     onAutoBreathSpeedChange,
+    onMicrosaccadesEnabledClick,
+    onMicrosaccadeAmplitudeChange,
+    onMicrosaccadeFrequencyChange,
+    onMicrosaccadeDurationChange,
+    onMicrosaccadeIntervalMinChange,
+    onMicrosaccadeIntervalMaxChange,
     onRestartAnimationsClick,
     updateCharactersModels,
     updateCharactersList,
@@ -137,6 +143,14 @@ const defaultSettings = {
     autoEyeFixationMax: 2000,
     autoBreathAmplitude: 0.024,
     autoBreathSpeed: 0.5,
+    
+    // Microsaccades settings
+    microsaccadesEnabled: true,
+    microsaccadeAmplitude: 0.02,
+    microsaccadeFrequency: 1.0,
+    microsaccadeDuration: 15,
+    microsaccadeIntervalMin: 300,
+    microsaccadeIntervalMax: 1500,
 
     // Character model mapping
     characterModelMapping: {},
@@ -182,6 +196,26 @@ function loadSettings() {
     if (extension_settings.live2d.autoBreathSpeed === undefined) {
         extension_settings.live2d.autoBreathSpeed = defaultSettings.autoBreathSpeed;
     }
+    
+    // Ensure microsaccades settings exist with defaults
+    if (extension_settings.live2d.microsaccadesEnabled === undefined) {
+        extension_settings.live2d.microsaccadesEnabled = defaultSettings.microsaccadesEnabled;
+    }
+    if (extension_settings.live2d.microsaccadeAmplitude === undefined) {
+        extension_settings.live2d.microsaccadeAmplitude = defaultSettings.microsaccadeAmplitude;
+    }
+    if (extension_settings.live2d.microsaccadeFrequency === undefined) {
+        extension_settings.live2d.microsaccadeFrequency = defaultSettings.microsaccadeFrequency;
+    }
+    if (extension_settings.live2d.microsaccadeDuration === undefined) {
+        extension_settings.live2d.microsaccadeDuration = defaultSettings.microsaccadeDuration;
+    }
+    if (extension_settings.live2d.microsaccadeIntervalMin === undefined) {
+        extension_settings.live2d.microsaccadeIntervalMin = defaultSettings.microsaccadeIntervalMin;
+    }
+    if (extension_settings.live2d.microsaccadeIntervalMax === undefined) {
+        extension_settings.live2d.microsaccadeIntervalMax = defaultSettings.microsaccadeIntervalMax;
+    }
 
     $('#live2d_enabled_checkbox').prop('checked', extension_settings.live2d.enabled);
     $('#live2d_follow_cursor_checkbox').prop('checked', extension_settings.live2d.followCursor);
@@ -207,6 +241,19 @@ function loadSettings() {
     $('#live2d_auto_breath_amplitude_value').text(extension_settings.live2d.autoBreathAmplitude);
     $('#live2d_auto_breath_speed').val(extension_settings.live2d.autoBreathSpeed);
     $('#live2d_auto_breath_speed_value').text(extension_settings.live2d.autoBreathSpeed);
+    
+    // Microsaccades settings
+    $('#live2d_microsaccades_enabled').prop('checked', extension_settings.live2d.microsaccadesEnabled);
+    $('#live2d_microsaccade_amplitude').val(extension_settings.live2d.microsaccadeAmplitude);
+    $('#live2d_microsaccade_amplitude_value').text(extension_settings.live2d.microsaccadeAmplitude.toFixed(3));
+    $('#live2d_microsaccade_frequency').val(extension_settings.live2d.microsaccadeFrequency);
+    $('#live2d_microsaccade_frequency_value').text(extension_settings.live2d.microsaccadeFrequency);
+    $('#live2d_microsaccade_duration').val(extension_settings.live2d.microsaccadeDuration);
+    $('#live2d_microsaccade_duration_value').text(extension_settings.live2d.microsaccadeDuration);
+    $('#live2d_microsaccade_interval_min').val(extension_settings.live2d.microsaccadeIntervalMin);
+    $('#live2d_microsaccade_interval_min_value').text(extension_settings.live2d.microsaccadeIntervalMin);
+    $('#live2d_microsaccade_interval_max').val(extension_settings.live2d.microsaccadeIntervalMax);
+    $('#live2d_microsaccade_interval_max_value').text(extension_settings.live2d.microsaccadeIntervalMax);
 }
 
 //#############################//
@@ -349,6 +396,15 @@ jQuery(async () => {
     $('#live2d_auto_eye_fixation_max').on('input', onAutoEyeFixationMaxChange);
     $('#live2d_auto_breath_amplitude').on('input', onAutoBreathAmplitudeChange);
     $('#live2d_auto_breath_speed').on('input', onAutoBreathSpeedChange);
+    
+    // Microsaccades event handlers
+    $('#live2d_microsaccades_enabled').on('click', onMicrosaccadesEnabledClick);
+    $('#live2d_microsaccade_amplitude').on('input', onMicrosaccadeAmplitudeChange);
+    $('#live2d_microsaccade_frequency').on('input', onMicrosaccadeFrequencyChange);
+    $('#live2d_microsaccade_duration').on('input', onMicrosaccadeDurationChange);
+    $('#live2d_microsaccade_interval_min').on('input', onMicrosaccadeIntervalMinChange);
+    $('#live2d_microsaccade_interval_max').on('input', onMicrosaccadeIntervalMaxChange);
+    
     $('#live2d_restart_animations_button').on('click', onRestartAnimationsClick);
 
     // Module worker

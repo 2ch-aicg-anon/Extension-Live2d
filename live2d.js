@@ -32,6 +32,7 @@ export {
     startAutoAnimations,
     stopAutoAnimations,
     restartAutoAnimations,
+    autoMicrosaccades,
 };
 
 let models = {};
@@ -716,6 +717,122 @@ async function autoBreathing(character) {
     
     autoAnimationsRunning[character].breathing = false;
 }
+async function autoMicrosaccades(character) {
+    const model = models[character];
+    if (!model) return;
+    
+    // Проверяем, включены ли автоматические анимации и микросаккады
+    if (!extension_settings.live2d.autoAnimationsEnabled || !extension_settings.live2d.microsaccadesEnabled) return;
+    
+    // Отмечаем, что анимация микросаккад запущена
+    if (!autoAnimationsRunning[character]) {
+        autoAnimationsRunning[character] = {};
+    }
+    autoAnimationsRunning[character].microsaccades = true;
+    
+    const model_path = extension_settings.live2d.characterModelMapping[character];
+    const EYE_X_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamEyeBallX'] || "PARAM_EYE_BALL_X";
+    const EYE_Y_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamEyeBallY'] || "PARAM_EYE_BALL_Y";
+    
+    // Параметры микросаккад (фиксированные на момент запуска)
+    const MICROSACCADE_AMPLITUDE = extension_settings.live2d.microsaccadeAmplitude || 0.02;
+    const MICROSACCADE_FREQUENCY = extension_settings.live2d.microsaccadeFrequency || 1.0;
+    const MICROSACCADE_DURATION = extension_settings.live2d.microsaccadeDuration || 15;
+    const MICROSACCADE_INTERVAL_MIN = extension_settings.live2d.microsaccadeIntervalMin || 300;
+    const MICROSACCADE_INTERVAL_MAX = extension_settings.live2d.microsaccadeIntervalMax || 1500;
+    
+    console.debug(DEBUG_PREFIX, `Microsaccades params for ${character}:`, {
+        MICROSACCADE_AMPLITUDE, MICROSACCADE_FREQUENCY, MICROSACCADE_DURATION,
+        MICROSACCADE_INTERVAL_MIN, MICROSACCADE_INTERVAL_MAX
+    });
+    
+    while (true) {
+        // Проверяем, что модель существует и анимации включены
+        if (model?.internalModel?.coreModel === undefined || 
+            !extension_settings.live2d.autoAnimationsEnabled || 
+            !extension_settings.live2d.microsaccadesEnabled) {
+            console.debug(DEBUG_PREFIX, 'Model destroyed or microsaccades disabled, stopping microsaccades');
+            autoAnimationsRunning[character].microsaccades = false;
+            break;
+        }
+        
+        try {
+            // Получаем текущее положение глаз
+            let currentX = 0;
+            let currentY = 0;
+            
+            try {
+                currentX = model.internalModel.coreModel.getParameterValueById(EYE_X_PARAM_ID) || 0;
+                currentY = model.internalModel.coreModel.getParameterValueById(EYE_Y_PARAM_ID) || 0;
+            } catch (error) {
+                // Если не можем получить текущие значения, используем 0
+                currentX = 0;
+                currentY = 0;
+            }
+            
+            // Генерируем случайное направление для микросаккады
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * MICROSACCADE_AMPLITUDE;
+            
+            const microsaccadeX = Math.cos(angle) * distance;
+            const microsaccadeY = Math.sin(angle) * distance;
+            
+            // Применяем микросаккаду как относительное смещение
+            const targetX = currentX + microsaccadeX;
+            const targetY = currentY + microsaccadeY;
+            
+            // Быстрое движение к новой позиции (саккада)
+            const SACCADE_STEPS = Math.max(2, Math.floor(MICROSACCADE_DURATION / 5));
+            const SACCADE_DELAY = Math.floor(MICROSACCADE_DURATION / SACCADE_STEPS);
+            
+            for (let step = 0; step <= SACCADE_STEPS; step++) {
+                const progress = step / SACCADE_STEPS;
+                // Быстрое движение с затуханием в конце
+                const eased = progress < 0.8 ? progress * 1.25 : 1 - Math.pow(2 * (1 - progress), 2);
+                
+                const currentPosX = currentX + (targetX - currentX) * eased;
+                const currentPosY = currentY + (targetY - currentY) * eased;
+                
+                // Применяем только относительное смещение, не перезаписывая основное положение
+                model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, microsaccadeX * eased);
+                model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, microsaccadeY * eased);
+                
+                await delay(SACCADE_DELAY);
+            }
+            
+            // Возвращаемся к исходной позиции (дрифт)
+            const DRIFT_STEPS = Math.max(3, Math.floor(MICROSACCADE_DURATION / 3));
+            const DRIFT_DELAY = Math.floor(MICROSACCADE_DURATION / DRIFT_STEPS);
+            
+            for (let step = 0; step <= DRIFT_STEPS; step++) {
+                const progress = step / DRIFT_STEPS;
+                const eased = 1 - Math.pow(1 - progress, 2); // Плавное возвращение
+                
+                const returnX = microsaccadeX * (1 - eased);
+                const returnY = microsaccadeY * (1 - eased);
+                
+                model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, returnX - microsaccadeX);
+                model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, returnY - microsaccadeY);
+                
+                await delay(DRIFT_DELAY);
+            }
+            
+            console.debug(DEBUG_PREFIX, `Microsaccade: direction=${angle.toFixed(2)}, distance=${distance.toFixed(4)}, duration=${MICROSACCADE_DURATION}ms`);
+            
+            // Случайный интервал до следующей микросаккады
+            const interval = MICROSACCADE_INTERVAL_MIN + Math.random() * (MICROSACCADE_INTERVAL_MAX - MICROSACCADE_INTERVAL_MIN);
+            await delay(interval);
+            
+        } catch (error) {
+            console.debug(DEBUG_PREFIX, 'Error animating microsaccades:', error);
+            autoAnimationsRunning[character].microsaccades = false;
+            break;
+        }
+    }
+    
+    autoAnimationsRunning[character].microsaccades = false;
+}
+
 async function autoEyeMovement(character) {
     const model = models[character];
     if (!model) return;
@@ -871,6 +988,7 @@ async function stopAutoAnimations(character) {
     if (autoAnimationsRunning[character]) {
         autoAnimationsRunning[character].breathing = false;
         autoAnimationsRunning[character].eyeMovement = false;
+        autoAnimationsRunning[character].microsaccades = false;
     }
     
     // Ждём немного, чтобы циклы завершились
@@ -910,5 +1028,10 @@ async function startAutoAnimations(character) {
     // Запускаем движение глаз, если ещё не запущено
     if (!autoAnimationsRunning[character].eyeMovement) {
         autoEyeMovement(character);
+    }
+    
+    // Запускаем микросаккады, если ещё не запущены и они включены
+    if (!autoAnimationsRunning[character].microsaccades && extension_settings.live2d.microsaccadesEnabled) {
+        autoMicrosaccades(character);
     }
 }

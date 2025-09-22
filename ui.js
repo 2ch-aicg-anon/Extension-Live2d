@@ -63,6 +63,12 @@ export {
     onAutoEyeFixationMaxChange,
     onAutoBreathAmplitudeChange,
     onAutoBreathSpeedChange,
+    onMicrosaccadesEnabledClick,
+    onMicrosaccadeAmplitudeChange,
+    onMicrosaccadeFrequencyChange,
+    onMicrosaccadeDurationChange,
+    onMicrosaccadeIntervalMinChange,
+    onMicrosaccadeIntervalMaxChange,
     onRestartAnimationsClick,
     updateCharactersModels,
     updateCharactersList,
@@ -896,6 +902,43 @@ async function onAutoBreathAmplitudeChange() {
 async function onAutoBreathSpeedChange() {
     extension_settings.live2d.autoBreathSpeed = Number($('#live2d_auto_breath_speed').val());
     $('#live2d_auto_breath_speed_value').text(extension_settings.live2d.autoBreathSpeed);
+    saveSettingsDebounced();
+}
+
+// Microsaccades event handlers
+async function onMicrosaccadesEnabledClick() {
+    extension_settings.live2d.microsaccadesEnabled = $('#live2d_microsaccades_enabled').is(':checked');
+    saveSettingsDebounced();
+    // Note: Use "Restart Animations" button to apply changes
+}
+
+async function onMicrosaccadeAmplitudeChange() {
+    extension_settings.live2d.microsaccadeAmplitude = Number($('#live2d_microsaccade_amplitude').val());
+    $('#live2d_microsaccade_amplitude_value').text(extension_settings.live2d.microsaccadeAmplitude.toFixed(3));
+    saveSettingsDebounced();
+}
+
+async function onMicrosaccadeFrequencyChange() {
+    extension_settings.live2d.microsaccadeFrequency = Number($('#live2d_microsaccade_frequency').val());
+    $('#live2d_microsaccade_frequency_value').text(extension_settings.live2d.microsaccadeFrequency);
+    saveSettingsDebounced();
+}
+
+async function onMicrosaccadeDurationChange() {
+    extension_settings.live2d.microsaccadeDuration = Number($('#live2d_microsaccade_duration').val());
+    $('#live2d_microsaccade_duration_value').text(extension_settings.live2d.microsaccadeDuration);
+    saveSettingsDebounced();
+}
+
+async function onMicrosaccadeIntervalMinChange() {
+    extension_settings.live2d.microsaccadeIntervalMin = Number($('#live2d_microsaccade_interval_min').val());
+    $('#live2d_microsaccade_interval_min_value').text(extension_settings.live2d.microsaccadeIntervalMin);
+    saveSettingsDebounced();
+}
+
+async function onMicrosaccadeIntervalMaxChange() {
+    extension_settings.live2d.microsaccadeIntervalMax = Number($('#live2d_microsaccade_interval_max').val());
+    $('#live2d_microsaccade_interval_max_value').text(extension_settings.live2d.microsaccadeIntervalMax);
     saveSettingsDebounced();
 }
 
