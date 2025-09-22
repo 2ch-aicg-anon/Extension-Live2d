@@ -55,6 +55,14 @@ export {
     onModelParamResetClick,
     onModelParamDeleteClick,
     onAnimationMappingChange,
+    onAutoAnimationsEnabledClick,
+    onAutoEyeCenterWeightChange,
+    onAutoEyeAmplitudeCenterChange,
+    onAutoEyeAmplitudePeripheralChange,
+    onAutoEyeFixationMinChange,
+    onAutoEyeFixationMaxChange,
+    onAutoBreathAmplitudeChange,
+    onAutoBreathSpeedChange,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -838,4 +846,53 @@ async function playStarterAnimation() {
     await delay(starting_delay);
     console.debug(DEBUG_PREFIX,'Make canvas visible');
     setVisible();
+}
+
+// Auto animations event handlers
+async function onAutoAnimationsEnabledClick() {
+    extension_settings.live2d.autoAnimationsEnabled = $('#live2d_auto_animations_enabled').is(':checked');
+    saveSettingsDebounced();
+    await loadLive2d();
+}
+
+async function onAutoEyeCenterWeightChange() {
+    extension_settings.live2d.autoEyeCenterWeight = Number($('#live2d_auto_eye_center_weight').val()) / 100;
+    $('#live2d_auto_eye_center_weight_value').text(Math.round(extension_settings.live2d.autoEyeCenterWeight * 100));
+    saveSettingsDebounced();
+}
+
+async function onAutoEyeAmplitudeCenterChange() {
+    extension_settings.live2d.autoEyeAmplitudeCenter = Number($('#live2d_auto_eye_amplitude_center').val());
+    $('#live2d_auto_eye_amplitude_center_value').text(extension_settings.live2d.autoEyeAmplitudeCenter);
+    saveSettingsDebounced();
+}
+
+async function onAutoEyeAmplitudePeripheralChange() {
+    extension_settings.live2d.autoEyeAmplitudePeripheral = Number($('#live2d_auto_eye_amplitude_peripheral').val());
+    $('#live2d_auto_eye_amplitude_peripheral_value').text(extension_settings.live2d.autoEyeAmplitudePeripheral);
+    saveSettingsDebounced();
+}
+
+async function onAutoEyeFixationMinChange() {
+    extension_settings.live2d.autoEyeFixationMin = Number($('#live2d_auto_eye_fixation_min').val());
+    $('#live2d_auto_eye_fixation_min_value').text(extension_settings.live2d.autoEyeFixationMin);
+    saveSettingsDebounced();
+}
+
+async function onAutoEyeFixationMaxChange() {
+    extension_settings.live2d.autoEyeFixationMax = Number($('#live2d_auto_eye_fixation_max').val());
+    $('#live2d_auto_eye_fixation_max_value').text(extension_settings.live2d.autoEyeFixationMax);
+    saveSettingsDebounced();
+}
+
+async function onAutoBreathAmplitudeChange() {
+    extension_settings.live2d.autoBreathAmplitude = Number($('#live2d_auto_breath_amplitude').val());
+    $('#live2d_auto_breath_amplitude_value').text(extension_settings.live2d.autoBreathAmplitude);
+    saveSettingsDebounced();
+}
+
+async function onAutoBreathSpeedChange() {
+    extension_settings.live2d.autoBreathSpeed = Number($('#live2d_auto_breath_speed').val());
+    $('#live2d_auto_breath_speed_value').text(extension_settings.live2d.autoBreathSpeed);
+    saveSettingsDebounced();
 }

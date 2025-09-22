@@ -666,15 +666,18 @@ async function autoBreathing(character) {
     const model = models[character];
     if (!model) return;
     
+    // Проверяем, включены ли автоматические анимации
+    if (!extension_settings.live2d.autoAnimationsEnabled) return;
+    
     const model_path = extension_settings.live2d.characterModelMapping[character];
-    const BREATH_PARAMETER_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['param_breath_id'] || "PARAM_BREATH";
-    const BREATH_SPEED = 0.5; // Скорость дыхания (можно настроить)
-    const BREATH_AMOUNT = 0.5; // Амплитуда дыхания (можно настроить)
+    const BREATH_PARAMETER_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamBreath'] || "PARAM_BREATH";
+    const BREATH_SPEED = extension_settings.live2d.autoBreathSpeed || 0.5;
+    const BREATH_AMOUNT = extension_settings.live2d.autoBreathAmplitude || 0.5;
     
     while (true) {
-        // Проверяем, что модель всё ещё существует
-        if (model?.internalModel?.coreModel === undefined) {
-            console.debug(DEBUG_PREFIX, 'Model destroyed, stopping breathing animation');
+        // Проверяем, что модель всё ещё существует и анимации включены
+        if (model?.internalModel?.coreModel === undefined || !extension_settings.live2d.autoAnimationsEnabled) {
+            console.debug(DEBUG_PREFIX, 'Model destroyed or animations disabled, stopping breathing animation');
             break;
         }
         
@@ -695,14 +698,19 @@ async function autoEyeMovement(character) {
     const model = models[character];
     if (!model) return;
     
-    const model_path = extension_settings.live2d.characterModelMapping[character];
-    const EYE_X_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['param_eye_ball_x_id'] || "PARAM_EYE_BALL_X";
-    const EYE_Y_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['param_eye_ball_y_id'] || "PARAM_EYE_BALL_Y";
+    // Проверяем, включены ли автоматические анимации
+    if (!extension_settings.live2d.autoAnimationsEnabled) return;
     
-    // Константы для настройки поведения
-    const CENTER_WEIGHT = 0.7; // Вероятность смотреть в центральную зону
-    const FIXATION_TIME_MIN = 200; // Минимальное время фиксации (мс)
-    const FIXATION_TIME_MAX = 2000; // Максимальное время фиксации (мс)
+    const model_path = extension_settings.live2d.characterModelMapping[character];
+    const EYE_X_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamEyeBallX'] || "PARAM_EYE_BALL_X";
+    const EYE_Y_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamEyeBallY'] || "PARAM_EYE_BALL_Y";
+    
+    // Параметры из настроек
+    const CENTER_WEIGHT = extension_settings.live2d.autoEyeCenterWeight || 0.7;
+    const AMPLITUDE_CENTER = extension_settings.live2d.autoEyeAmplitudeCenter || 0.25;
+    const AMPLITUDE_PERIPHERAL = extension_settings.live2d.autoEyeAmplitudePeripheral || 1.0;
+    const FIXATION_TIME_MIN = extension_settings.live2d.autoEyeFixationMin || 200;
+    const FIXATION_TIME_MAX = extension_settings.live2d.autoEyeFixationMax || 2000;
     const SACCADE_TIME = 30; // Время движения глаз (мс)
     const MICROSACCADE_AMOUNT = 0.1; // Амплитуда микросаккад
     
@@ -711,9 +719,9 @@ async function autoEyeMovement(character) {
     let currentY = 0;
     
     while (true) {
-        // Проверяем, что модель существует
-        if (model?.internalModel?.coreModel === undefined) {
-            console.debug(DEBUG_PREFIX, 'Model destroyed, stopping eye movement');
+        // Проверяем, что модель существует и анимации включены
+        if (model?.internalModel?.coreModel === undefined || !extension_settings.live2d.autoAnimationsEnabled) {
+            console.debug(DEBUG_PREFIX, 'Model destroyed or animations disabled, stopping eye movement');
             break;
         }
         
@@ -723,12 +731,12 @@ async function autoEyeMovement(character) {
             
             if (Math.random() < CENTER_WEIGHT) {
                 // Смотрим в центральную зону
-                targetX = (Math.random() - 0.5) * 0.5; // ±0.25
-                targetY = (Math.random() - 0.5) * 0.5; // ±0.25
+                targetX = (Math.random() - 0.5) * AMPLITUDE_CENTER;
+                targetY = (Math.random() - 0.5) * AMPLITUDE_CENTER;
             } else {
                 // Смотрим в периферийную зону
-                targetX = (Math.random() - 0.5) * 2; // ±1.0
-                targetY = (Math.random() - 0.5) * 2; // ±1.0
+                targetX = (Math.random() - 0.5) * AMPLITUDE_PERIPHERAL;
+                targetY = (Math.random() - 0.5) * AMPLITUDE_PERIPHERAL;
             }
             
             // Выполняем саккаду (быстрое движение к новой точке)
