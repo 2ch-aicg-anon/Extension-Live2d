@@ -348,8 +348,8 @@ async function loadLive2d(visible = true) {
         model.on('hit', (hitAreas) => onHitAreasClick(character, hitAreas));
         model.on('click', (e) => onClick(model, e.data.global.x,e.data.global.y));
 
-        // Set cursor behavior - отключаем если включены автоматические анимации
-        model.autoInteract = extension_settings.live2d.autoAnimationsEnabled ? false : extension_settings.live2d.followCursor;
+        // Set cursor behavior
+        model.autoInteract = extension_settings.live2d.followCursor;
         
         // Start auto animations
         startAutoAnimations(character);
@@ -695,7 +695,10 @@ async function autoBreathing(character) {
         }
         
         const time = Date.now() / 1000; // Текущее время в секундах
-        const value = BREATH_AMOUNT * Math.sin(BREATH_SPEED * time);
+        // Попробуем разные диапазоны для Live2D параметров
+        // Live2D параметры обычно работают в диапазоне от -1 до 1, иногда больше
+        const sinValue = Math.sin(BREATH_SPEED * time);
+        const value = BREATH_AMOUNT * sinValue * 30; // Увеличиваем амплитуду в 30 раз
         
         try {
             model.internalModel.coreModel.addParameterValueById(BREATH_PARAMETER_ID, value);
@@ -735,7 +738,6 @@ async function autoEyeMovement(character) {
     const MICROSACCADE_AMOUNT = extension_settings.live2d.autoEyeMicrosaccadeAmplitude || 0.1;
     const MICROSACCADE_FREQUENCY = extension_settings.live2d.autoEyeMicrosaccadeFrequency || 0.3;
     
-    // Параметры движения глаз зафиксированы при запуске
     
     // Текущее положение глаз
     let currentX = 0;
@@ -792,8 +794,12 @@ async function autoEyeMovement(character) {
             currentX = targetX;
             currentY = targetY;
             
-            model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
-            model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
+            // Масштабируем для Live2D параметров (обычно нужны большие значения)
+            const scaledX = currentX * 30;
+            const scaledY = currentY * 30;
+            
+            model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, scaledX);
+            model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, scaledY);
             
             // Небольшая задержка после саккады (естественная пауза)
             await delay(30);
@@ -808,12 +814,18 @@ async function autoEyeMovement(character) {
                     const microsaccadeX = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
                     const microsaccadeY = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
                     
-                    model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
-                    model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
+                    const scaledMicroX = (currentX + microsaccadeX) * 30;
+                    const scaledMicroY = (currentY + microsaccadeY) * 30;
+                    
+                    model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, scaledMicroX);
+                    model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, scaledMicroY);
                 } else {
                     // Возвращаемся к текущей позиции
-                    model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
-                    model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
+                    const scaledX = currentX * 30;
+                    const scaledY = currentY * 30;
+                    
+                    model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, scaledX);
+                    model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, scaledY);
                 }
                 
                 await delay(50);
@@ -843,12 +855,6 @@ async function stopAutoAnimations(character) {
 async function restartAutoAnimations(character) {
     // Останавливаем текущие анимации
     await stopAutoAnimations(character);
-    
-    // Обновляем cursor behavior для модели
-    const model = models[character];
-    if (model) {
-        model.autoInteract = extension_settings.live2d.autoAnimationsEnabled ? false : extension_settings.live2d.followCursor;
-    }
     
     // Запускаем заново
     await startAutoAnimations(character);
