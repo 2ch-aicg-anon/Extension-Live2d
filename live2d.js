@@ -742,14 +742,25 @@ async function autoEyeMovement(character) {
     const MICROSACCADE_AMOUNT = extension_settings.live2d.autoEyeMicrosaccadeAmplitude || 0.1;
     const MICROSACCADE_FREQUENCY = extension_settings.live2d.autoEyeMicrosaccadeFrequency || 0.3;
     
-    console.debug(DEBUG_PREFIX, `Eye movement params for ${character}:`, {
-        CENTER_WEIGHT, AMPLITUDE_CENTER, AMPLITUDE_PERIPHERAL, 
-        FIXATION_TIME_MIN, FIXATION_TIME_MAX, MICROSACCADE_AMOUNT, MICROSACCADE_FREQUENCY
-    });
+        console.debug(DEBUG_PREFIX, `Eye movement params for ${character}:`, {
+            CENTER_WEIGHT, AMPLITUDE_CENTER, AMPLITUDE_PERIPHERAL,
+            FIXATION_TIME_MIN, FIXATION_TIME_MAX, MICROSACCADE_AMOUNT, MICROSACCADE_FREQUENCY,
+            'MICROSACCADE_FREQUENCY type': typeof MICROSACCADE_FREQUENCY,
+            'MICROSACCADE_AMOUNT type': typeof MICROSACCADE_AMOUNT
+        });
     
     // Текущее положение глаз
     let currentX = 0;
     let currentY = 0;
+    
+    // Сброс параметров глаз в начальное положение
+    try {
+        model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, 0);
+        model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, 0);
+        console.debug(DEBUG_PREFIX, 'Reset eye parameters to (0, 0)');
+    } catch (error) {
+        console.debug(DEBUG_PREFIX, 'Error resetting eye parameters:', error);
+    }
     
     while (true) {
         // Проверяем, что модель существует и анимации включены
@@ -834,9 +845,11 @@ async function autoEyeMovement(character) {
             const startFixationTime = Date.now();
             
             // Если микросаккады отключены, просто ждём время фиксации
-            if (MICROSACCADE_FREQUENCY === 0 || MICROSACCADE_AMOUNT === 0) {
+            if (Number(MICROSACCADE_FREQUENCY) === 0 || Number(MICROSACCADE_AMOUNT) === 0) {
+                console.debug(DEBUG_PREFIX, `Microsaccades disabled - frequency: ${MICROSACCADE_FREQUENCY}, amount: ${MICROSACCADE_AMOUNT}`);
                 await delay(fixationTime);
             } else {
+                console.debug(DEBUG_PREFIX, `Microsaccades enabled - frequency: ${MICROSACCADE_FREQUENCY}, amount: ${MICROSACCADE_AMOUNT}`);
                 // Микросаккады включены - обновляем позицию каждые 50мс
                 while (Date.now() - startFixationTime < fixationTime) {
                     if (Math.random() < MICROSACCADE_FREQUENCY) {
