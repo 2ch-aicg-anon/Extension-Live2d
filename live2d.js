@@ -767,8 +767,11 @@ async function autoEyeMovement(character) {
                 targetX = Math.cos(angle) * distance;
                 targetY = Math.sin(angle) * distance;
                 console.debug(DEBUG_PREFIX, `Center only: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
-            } else if (lookChoice < CENTER_WEIGHT) {
-                // Смотрим в центральную зону (CENTER_WEIGHT% времени)
+            } else if (lookChoice < (1 - CENTER_WEIGHT)) {
+                // Смотрим в центральную зону ((1-CENTER_WEIGHT)% времени)
+                // CENTER_WEIGHT=0% → 100% времени в центре
+                // CENTER_WEIGHT=70% → 30% времени в центре  
+                // CENTER_WEIGHT=100% → 0% времени в центре
                 if (Math.random() < 0.3) {
                     // 30% от центральных взглядов - смотрим прямо в центр
                     targetX = 0;
@@ -783,7 +786,10 @@ async function autoEyeMovement(character) {
                     console.debug(DEBUG_PREFIX, `Near center look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
                 }
             } else {
-                // Смотрим в периферийную зону (остальное время)
+                // Смотрим в периферийную зону (CENTER_WEIGHT% времени)
+                // CENTER_WEIGHT=0% → 0% времени по сторонам
+                // CENTER_WEIGHT=70% → 70% времени по сторонам
+                // CENTER_WEIGHT=100% → 100% времени по сторонам
                 const angle = Math.random() * Math.PI * 2;
                 const distance = AMPLITUDE_CENTER + Math.random() * (AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER);
                 targetX = Math.cos(angle) * distance;
