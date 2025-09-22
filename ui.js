@@ -916,14 +916,11 @@ async function onRestartAnimationsClick() {
     const { restartAutoAnimations, charactersWithModelLoaded } = await import('./live2d.js');
     const loadedCharacters = charactersWithModelLoaded();
     
-    if (loadedCharacters.length === 0) {
-        toastr.warning('No Live2D models loaded', 'Restart Animations');
-        return;
-    }
+    console.debug(DEBUG_PREFIX, 'Restarting animations for all loaded characters:', loadedCharacters);
     
     for (const character of loadedCharacters) {
         await restartAutoAnimations(character);
     }
     
-    toastr.success(`Restarted animations for ${loadedCharacters.length} character(s): ${loadedCharacters.join(', ')}`, 'Auto Animations');
+    console.debug(DEBUG_PREFIX, 'All animations restarted with current settings');
 }
