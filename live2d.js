@@ -704,8 +704,7 @@ async function autoBreathing(character) {
         }
         
         try {
-            // Используем setParameterValueById вместо addParameterValueById для избежания накопления значений
-            model.internalModel.coreModel.setParameterValueById(BREATH_PARAMETER_ID, value);
+            model.internalModel.coreModel.addParameterValueById(BREATH_PARAMETER_ID, value);
         } catch (error) {
             console.debug(DEBUG_PREFIX, 'Error animating breath parameter:', error);
             autoAnimationsRunning[character].breathing = false;
@@ -740,31 +739,11 @@ async function autoEyeMovement(character) {
     const AMPLITUDE_PERIPHERAL = extension_settings.live2d.autoEyeAmplitudePeripheral || 1.0;
     const FIXATION_TIME_MIN = extension_settings.live2d.autoEyeFixationMin || 200;
     const FIXATION_TIME_MAX = extension_settings.live2d.autoEyeFixationMax || 2000;
-    const MICROSACCADE_AMOUNT = extension_settings.live2d.autoEyeMicrosaccadeAmplitude || 0.1;
-    const MICROSACCADE_FREQUENCY = extension_settings.live2d.autoEyeMicrosaccadeFrequency || 0.3;
     
-    // ЕСЛИ MICROSACCADE_FREQUENCY = 0, ПОЛНОСТЬЮ ОТКЛЮЧАЕМ ДВИЖЕНИЯ ГЛАЗ ДЛЯ ТЕСТИРОВАНИЯ
-    if (Number(MICROSACCADE_FREQUENCY) === 0) {
-        console.debug(DEBUG_PREFIX, `Eye movement COMPLETELY DISABLED for testing (Microsaccade frequency = 0)`);
-        // Устанавливаем глаза в центр и выходим
-        model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, 0);
-        model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, 0);
-        
-        // Ждем пока анимации включены
-        while (extension_settings.live2d.autoAnimationsEnabled && autoAnimationsRunning[character].eyeMovement) {
-            await delay(1000);
-        }
-        
-        autoAnimationsRunning[character].eyeMovement = false;
-        return;
-    }
-    
-        console.debug(DEBUG_PREFIX, `Eye movement params for ${character}:`, {
-            CENTER_WEIGHT, AMPLITUDE_CENTER, AMPLITUDE_PERIPHERAL,
-            FIXATION_TIME_MIN, FIXATION_TIME_MAX, MICROSACCADE_AMOUNT, MICROSACCADE_FREQUENCY,
-            'MICROSACCADE_FREQUENCY type': typeof MICROSACCADE_FREQUENCY,
-            'MICROSACCADE_AMOUNT type': typeof MICROSACCADE_AMOUNT
-        });
+    console.debug(DEBUG_PREFIX, `Eye movement params for ${character}:`, {
+        CENTER_WEIGHT, AMPLITUDE_CENTER, AMPLITUDE_PERIPHERAL,
+        FIXATION_TIME_MIN, FIXATION_TIME_MAX
+    });
     
     // Текущее положение глаз
     let currentX = 0;
@@ -857,35 +836,10 @@ async function autoEyeMovement(character) {
             currentX = targetX;
             currentY = targetY;
             
-            // Фиксация взгляда с микросаккадами
+            // Фиксация взгляда (просто ждём случайное время)
             const fixationTime = FIXATION_TIME_MIN + Math.random() * (FIXATION_TIME_MAX - FIXATION_TIME_MIN);
-            const startFixationTime = Date.now();
-            
-            // Если микросаккады отключены, просто ждём время фиксации
-            if (Number(MICROSACCADE_FREQUENCY) === 0 || Number(MICROSACCADE_AMOUNT) === 0) {
-                console.debug(DEBUG_PREFIX, `Microsaccades disabled - frequency: ${MICROSACCADE_FREQUENCY}, amount: ${MICROSACCADE_AMOUNT}`);
-                console.debug(DEBUG_PREFIX, `Fixation at (${currentX.toFixed(3)}, ${currentY.toFixed(3)}) for ${fixationTime}ms`);
-                await delay(fixationTime);
-            } else {
-                console.debug(DEBUG_PREFIX, `Microsaccades enabled - frequency: ${MICROSACCADE_FREQUENCY}, amount: ${MICROSACCADE_AMOUNT}`);
-                // Микросаккады включены - обновляем позицию каждые 50мс
-                while (Date.now() - startFixationTime < fixationTime) {
-                    if (Math.random() < MICROSACCADE_FREQUENCY) {
-                        const microsaccadeX = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
-                        const microsaccadeY = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
-                        
-                        model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
-                        model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
-                        console.debug(DEBUG_PREFIX, `Microsaccade: X=${(currentX + microsaccadeX).toFixed(3)}, Y=${(currentY + microsaccadeY).toFixed(3)}`);
-                    } else {
-                        // Возвращаемся к текущей позиции
-                        model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentX);
-                        model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentY);
-                    }
-                    
-                    await delay(50);
-                }
-            }
+            console.debug(DEBUG_PREFIX, `Fixation for ${fixationTime.toFixed(0)}ms`);
+            await delay(fixationTime);
             
         } catch (error) {
             console.debug(DEBUG_PREFIX, 'Error animating eyes:', error);

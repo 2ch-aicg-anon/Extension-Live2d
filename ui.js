@@ -61,8 +61,6 @@ export {
     onAutoEyeAmplitudePeripheralChange,
     onAutoEyeFixationMinChange,
     onAutoEyeFixationMaxChange,
-    onAutoEyeMicrosaccadeAmplitudeChange,
-    onAutoEyeMicrosaccadeFrequencyChange,
     onAutoBreathAmplitudeChange,
     onAutoBreathSpeedChange,
     onRestartAnimationsClick,
@@ -888,17 +886,6 @@ async function onAutoEyeFixationMaxChange() {
     saveSettingsDebounced();
 }
 
-async function onAutoEyeMicrosaccadeAmplitudeChange() {
-    extension_settings.live2d.autoEyeMicrosaccadeAmplitude = Number($('#live2d_auto_eye_microsaccade_amplitude').val());
-    $('#live2d_auto_eye_microsaccade_amplitude_value').text(extension_settings.live2d.autoEyeMicrosaccadeAmplitude);
-    saveSettingsDebounced();
-}
-
-async function onAutoEyeMicrosaccadeFrequencyChange() {
-    extension_settings.live2d.autoEyeMicrosaccadeFrequency = Number($('#live2d_auto_eye_microsaccade_frequency').val());
-    $('#live2d_auto_eye_microsaccade_frequency_value').text(extension_settings.live2d.autoEyeMicrosaccadeFrequency);
-    saveSettingsDebounced();
-}
 
 async function onAutoBreathAmplitudeChange() {
     extension_settings.live2d.autoBreathAmplitude = Number($('#live2d_auto_breath_amplitude').val());
