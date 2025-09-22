@@ -802,18 +802,32 @@ async function autoEyeMovement(character) {
                 console.debug(DEBUG_PREFIX, `Peripheral look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
             }
             
-            // Выполняем саккаду (резкое перемещение к новой точке)
-            // Настоящие саккады - это быстрые резкие движения, не плавные
+            // Плавная интерполяция к новой позиции (саккада)
+            const SACCADE_STEPS = 6; // Количество шагов для плавности
+            const SACCADE_DELAY = 5; // Задержка между шагами (мс)
+            
+            for (let step = 0; step <= SACCADE_STEPS; step++) {
+                const progress = step / SACCADE_STEPS;
+                // Используем easing функцию для более естественного движения
+                const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                
+                const currentPosX = currentX + (targetX - currentX) * eased;
+                const currentPosY = currentY + (targetY - currentY) * eased;
+                
+                // Используем setParameterValueById для абсолютных позиций
+                model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentPosX);
+                model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentPosY);
+                
+                if (step === SACCADE_STEPS) {
+                    console.debug(DEBUG_PREFIX, `Final eye position: X=${currentPosX.toFixed(3)}, Y=${currentPosY.toFixed(3)}`);
+                }
+                
+                await delay(SACCADE_DELAY);
+            }
+            
+            // Обновляем текущую позицию
             currentX = targetX;
             currentY = targetY;
-            
-            // Отладочная информация - показываем что передаём в параметры
-            console.debug(DEBUG_PREFIX, `Setting eye params: X=${currentX.toFixed(3)}, Y=${currentY.toFixed(3)}`);
-            model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
-            model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
-            
-            // Небольшая задержка после саккады (естественная пауза)
-            await delay(30);
             
             // Фиксация взгляда с микросаккадами
             const fixationTime = FIXATION_TIME_MIN + Math.random() * (FIXATION_TIME_MAX - FIXATION_TIME_MIN);
@@ -829,13 +843,13 @@ async function autoEyeMovement(character) {
                         const microsaccadeX = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
                         const microsaccadeY = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
                         
-                        model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
-                        model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
+                        model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
+                        model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
                         console.debug(DEBUG_PREFIX, `Microsaccade: X=${(currentX + microsaccadeX).toFixed(3)}, Y=${(currentY + microsaccadeY).toFixed(3)}`);
                     } else {
                         // Возвращаемся к текущей позиции
-                        model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
-                        model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
+                        model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentX);
+                        model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentY);
                     }
                     
                     await delay(50);

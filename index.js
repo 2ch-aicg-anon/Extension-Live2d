@@ -139,7 +139,7 @@ const defaultSettings = {
     autoEyeFixationMax: 2000,
     autoEyeMicrosaccadeAmplitude: 0.01,
     autoEyeMicrosaccadeFrequency: 0.3,
-    autoBreathAmplitude: 0.24,
+    autoBreathAmplitude: 0.024,
     autoBreathSpeed: 0.5,
 
     // Character model mapping
