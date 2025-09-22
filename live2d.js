@@ -758,16 +758,32 @@ async function autoEyeMovement(character) {
             // Определяем следующую точку фиксации
             let targetX, targetY;
             
-            // Если peripheral amplitude = 0, всегда смотрим в центральную зону
-            if (AMPLITUDE_PERIPHERAL === 0 || Math.random() < CENTER_WEIGHT) {
-                // Смотрим в центральную зону (в радиусе AMPLITUDE_CENTER от центра)
+            const lookChoice = Math.random();
+            
+            if (AMPLITUDE_PERIPHERAL === 0) {
+                // Если peripheral amplitude = 0, всегда смотрим в центральную зону
                 const angle = Math.random() * Math.PI * 2;
                 const distance = Math.random() * AMPLITUDE_CENTER;
                 targetX = Math.cos(angle) * distance;
                 targetY = Math.sin(angle) * distance;
-                console.debug(DEBUG_PREFIX, `Center look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
+                console.debug(DEBUG_PREFIX, `Center only: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
+            } else if (lookChoice < CENTER_WEIGHT) {
+                // Смотрим в центральную зону (CENTER_WEIGHT% времени)
+                if (Math.random() < 0.3) {
+                    // 30% от центральных взглядов - смотрим прямо в центр
+                    targetX = 0;
+                    targetY = 0;
+                    console.debug(DEBUG_PREFIX, `Direct center look: target=(0, 0)`);
+                } else {
+                    // 70% от центральных взглядов - смотрим рядом с центром
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * AMPLITUDE_CENTER;
+                    targetX = Math.cos(angle) * distance;
+                    targetY = Math.sin(angle) * distance;
+                    console.debug(DEBUG_PREFIX, `Near center look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
+                }
             } else {
-                // Смотрим в периферийную зону (между AMPLITUDE_CENTER и AMPLITUDE_PERIPHERAL)
+                // Смотрим в периферийную зону (остальное время)
                 const angle = Math.random() * Math.PI * 2;
                 const distance = AMPLITUDE_CENTER + Math.random() * (AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER);
                 targetX = Math.cos(angle) * distance;
