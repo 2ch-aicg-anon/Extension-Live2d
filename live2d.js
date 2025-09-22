@@ -743,6 +743,22 @@ async function autoEyeMovement(character) {
     const MICROSACCADE_AMOUNT = extension_settings.live2d.autoEyeMicrosaccadeAmplitude || 0.1;
     const MICROSACCADE_FREQUENCY = extension_settings.live2d.autoEyeMicrosaccadeFrequency || 0.3;
     
+    // ЕСЛИ MICROSACCADE_FREQUENCY = 0, ПОЛНОСТЬЮ ОТКЛЮЧАЕМ ДВИЖЕНИЯ ГЛАЗ ДЛЯ ТЕСТИРОВАНИЯ
+    if (Number(MICROSACCADE_FREQUENCY) === 0) {
+        console.debug(DEBUG_PREFIX, `Eye movement COMPLETELY DISABLED for testing (Microsaccade frequency = 0)`);
+        // Устанавливаем глаза в центр и выходим
+        model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, 0);
+        model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, 0);
+        
+        // Ждем пока анимации включены
+        while (extension_settings.live2d.autoAnimationsEnabled && autoAnimationsRunning[character].eyeMovement) {
+            await delay(1000);
+        }
+        
+        autoAnimationsRunning[character].eyeMovement = false;
+        return;
+    }
+    
         console.debug(DEBUG_PREFIX, `Eye movement params for ${character}:`, {
             CENTER_WEIGHT, AMPLITUDE_CENTER, AMPLITUDE_PERIPHERAL,
             FIXATION_TIME_MIN, FIXATION_TIME_MAX, MICROSACCADE_AMOUNT, MICROSACCADE_FREQUENCY,
