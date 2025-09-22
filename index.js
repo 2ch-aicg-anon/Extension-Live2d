@@ -91,6 +91,7 @@ import {
     onAutoEyeMicrosaccadeFrequencyChange,
     onAutoBreathAmplitudeChange,
     onAutoBreathSpeedChange,
+    onRestartAnimationsClick,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -359,6 +360,7 @@ jQuery(async () => {
     $('#live2d_auto_eye_microsaccade_frequency').on('input', onAutoEyeMicrosaccadeFrequencyChange);
     $('#live2d_auto_breath_amplitude').on('input', onAutoBreathAmplitudeChange);
     $('#live2d_auto_breath_speed').on('input', onAutoBreathSpeedChange);
+    $('#live2d_restart_animations_button').on('click', onRestartAnimationsClick);
 
     // Module worker
     const wrapper = new ModuleWorkerWrapper(moduleWorker);

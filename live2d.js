@@ -30,6 +30,8 @@ export {
     charactersWithModelLoaded,
     forceLoopAnimation,
     startAutoAnimations,
+    stopAutoAnimations,
+    restartAutoAnimations,
 };
 
 let models = {};
@@ -681,6 +683,10 @@ async function autoBreathing(character) {
     const model_path = extension_settings.live2d.characterModelMapping[character];
     const BREATH_PARAMETER_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamBreath'] || "PARAM_BREATH";
     
+    // Фиксируем параметры на момент запуска (не читаем в реальном времени)
+    const BREATH_SPEED = extension_settings.live2d.autoBreathSpeed || 0.5;
+    const BREATH_AMOUNT = extension_settings.live2d.autoBreathAmplitude || 0.5;
+    
     while (true) {
         // Проверяем, что модель всё ещё существует и анимации включены
         if (model?.internalModel?.coreModel === undefined || !extension_settings.live2d.autoAnimationsEnabled) {
@@ -688,9 +694,6 @@ async function autoBreathing(character) {
             autoAnimationsRunning[character].breathing = false;
             break;
         }
-        
-        const BREATH_SPEED = extension_settings.live2d.autoBreathSpeed || 0.5;
-        const BREATH_AMOUNT = extension_settings.live2d.autoBreathAmplitude || 0.5;
         
         const time = Date.now() / 1000; // Текущее время в секундах
         const value = BREATH_AMOUNT * Math.sin(BREATH_SPEED * time);
@@ -725,7 +728,19 @@ async function autoEyeMovement(character) {
     const EYE_X_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamEyeBallX'] || "PARAM_EYE_BALL_X";
     const EYE_Y_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamEyeBallY'] || "PARAM_EYE_BALL_Y";
     
-    const SACCADE_TIME = 30; // Время движения глаз (мс)
+    // Фиксируем параметры на момент запуска (не читаем в реальном времени)
+    const CENTER_WEIGHT = extension_settings.live2d.autoEyeCenterWeight || 0.7;
+    const AMPLITUDE_CENTER = extension_settings.live2d.autoEyeAmplitudeCenter || 0.25;
+    const AMPLITUDE_PERIPHERAL = extension_settings.live2d.autoEyeAmplitudePeripheral || 1.0;
+    const FIXATION_TIME_MIN = extension_settings.live2d.autoEyeFixationMin || 200;
+    const FIXATION_TIME_MAX = extension_settings.live2d.autoEyeFixationMax || 2000;
+    const MICROSACCADE_AMOUNT = extension_settings.live2d.autoEyeMicrosaccadeAmplitude || 0.1;
+    const MICROSACCADE_FREQUENCY = extension_settings.live2d.autoEyeMicrosaccadeFrequency || 0.3;
+    
+    console.debug(DEBUG_PREFIX, `Eye movement params for ${character}:`, {
+        CENTER_WEIGHT, AMPLITUDE_CENTER, AMPLITUDE_PERIPHERAL, 
+        FIXATION_TIME_MIN, FIXATION_TIME_MAX, MICROSACCADE_AMOUNT, MICROSACCADE_FREQUENCY
+    });
     
     // Текущее положение глаз
     let currentX = 0;
@@ -740,48 +755,36 @@ async function autoEyeMovement(character) {
         }
         
         try {
-            // Получаем актуальные параметры из настроек
-            const CENTER_WEIGHT = extension_settings.live2d.autoEyeCenterWeight || 0.7;
-            const AMPLITUDE_CENTER = extension_settings.live2d.autoEyeAmplitudeCenter || 0.25;
-            const AMPLITUDE_PERIPHERAL = extension_settings.live2d.autoEyeAmplitudePeripheral || 1.0;
-            const FIXATION_TIME_MIN = extension_settings.live2d.autoEyeFixationMin || 200;
-            const FIXATION_TIME_MAX = extension_settings.live2d.autoEyeFixationMax || 2000;
-            const MICROSACCADE_AMOUNT = extension_settings.live2d.autoEyeMicrosaccadeAmplitude || 0.1;
-            const MICROSACCADE_FREQUENCY = extension_settings.live2d.autoEyeMicrosaccadeFrequency || 0.3;
-            
             // Определяем следующую точку фиксации
             let targetX, targetY;
             
             // Если peripheral amplitude = 0, всегда смотрим в центральную зону
             if (AMPLITUDE_PERIPHERAL === 0 || Math.random() < CENTER_WEIGHT) {
-                // Смотрим в центральную зону (AMPLITUDE_CENTER контролирует максимальное отклонение от центра)
-                targetX = (Math.random() - 0.5) * 2 * AMPLITUDE_CENTER; // ±AMPLITUDE_CENTER
-                targetY = (Math.random() - 0.5) * 2 * AMPLITUDE_CENTER; // ±AMPLITUDE_CENTER
+                // Смотрим в центральную зону (в радиусе AMPLITUDE_CENTER от центра)
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * AMPLITUDE_CENTER;
+                targetX = Math.cos(angle) * distance;
+                targetY = Math.sin(angle) * distance;
+                console.debug(DEBUG_PREFIX, `Center look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
             } else {
-                // Смотрим в периферийную зону
-                const angle = Math.random() * Math.PI * 2; // Случайное направление
+                // Смотрим в периферийную зону (между AMPLITUDE_CENTER и AMPLITUDE_PERIPHERAL)
+                const angle = Math.random() * Math.PI * 2;
                 const distance = AMPLITUDE_CENTER + Math.random() * (AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER);
                 targetX = Math.cos(angle) * distance;
                 targetY = Math.sin(angle) * distance;
+                console.debug(DEBUG_PREFIX, `Peripheral look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
             }
             
-            // Выполняем саккаду (быстрое движение к новой точке)
-            const steps = SACCADE_TIME / 50; // 50ms = 20fps
-            for (let i = 0; i < steps; i++) {
-                const progress = i / steps;
-                // Используем функцию плавности для более естественного движения
-                const ease = progress < 0.5 
-                    ? 2 * progress * progress 
-                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-                
-                currentX = currentX + (targetX - currentX) * ease;
-                currentY = currentY + (targetY - currentY) * ease;
-                
-                model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
-                model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
-                
-                await delay(50);
-            }
+            // Выполняем саккаду (резкое перемещение к новой точке)
+            // Настоящие саккады - это быстрые резкие движения, не плавные
+            currentX = targetX;
+            currentY = targetY;
+            
+            model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
+            model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
+            
+            // Небольшая задержка после саккады (естественная пауза)
+            await delay(30);
             
             // Фиксация взгляда с микросаккадами
             const fixationTime = FIXATION_TIME_MIN + Math.random() * (FIXATION_TIME_MAX - FIXATION_TIME_MIN);
@@ -812,6 +815,30 @@ async function autoEyeMovement(character) {
     }
     
     autoAnimationsRunning[character].eyeMovement = false;
+}
+
+// Функция для остановки всех анимаций персонажа
+async function stopAutoAnimations(character) {
+    console.debug(DEBUG_PREFIX, 'Stopping auto animations for', character);
+    
+    if (autoAnimationsRunning[character]) {
+        autoAnimationsRunning[character].breathing = false;
+        autoAnimationsRunning[character].eyeMovement = false;
+    }
+    
+    // Ждём немного, чтобы циклы завершились
+    await delay(100);
+}
+
+// Функция для перезапуска всех анимаций персонажа
+async function restartAutoAnimations(character) {
+    console.debug(DEBUG_PREFIX, 'Restarting auto animations for', character);
+    
+    // Останавливаем текущие анимации
+    await stopAutoAnimations(character);
+    
+    // Запускаем заново
+    await startAutoAnimations(character);
 }
 
 // Функция для запуска всех автоматических анимаций для персонажа

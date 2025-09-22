@@ -65,6 +65,7 @@ export {
     onAutoEyeMicrosaccadeFrequencyChange,
     onAutoBreathAmplitudeChange,
     onAutoBreathSpeedChange,
+    onRestartAnimationsClick,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -854,15 +855,7 @@ async function playStarterAnimation() {
 async function onAutoAnimationsEnabledClick() {
     extension_settings.live2d.autoAnimationsEnabled = $('#live2d_auto_animations_enabled').is(':checked');
     saveSettingsDebounced();
-    
-    // Если анимации включены, запускаем их для всех загруженных моделей
-    if (extension_settings.live2d.autoAnimationsEnabled) {
-        const { startAutoAnimations, charactersWithModelLoaded } = await import('./live2d.js');
-        const loadedCharacters = charactersWithModelLoaded();
-        for (const character of loadedCharacters) {
-            startAutoAnimations(character);
-        }
-    }
+    // Note: Use "Restart Animations" button to apply changes
 }
 
 async function onAutoEyeCenterWeightChange() {
@@ -917,4 +910,17 @@ async function onAutoBreathSpeedChange() {
     extension_settings.live2d.autoBreathSpeed = Number($('#live2d_auto_breath_speed').val());
     $('#live2d_auto_breath_speed_value').text(extension_settings.live2d.autoBreathSpeed);
     saveSettingsDebounced();
+}
+
+async function onRestartAnimationsClick() {
+    const { restartAutoAnimations, charactersWithModelLoaded } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    console.debug(DEBUG_PREFIX, 'Restarting animations for all loaded characters:', loadedCharacters);
+    
+    for (const character of loadedCharacters) {
+        await restartAutoAnimations(character);
+    }
+    
+    console.debug(DEBUG_PREFIX, 'All animations restarted with current settings');
 }
