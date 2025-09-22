@@ -61,6 +61,8 @@ export {
     onAutoEyeAmplitudePeripheralChange,
     onAutoEyeFixationMinChange,
     onAutoEyeFixationMaxChange,
+    onAutoEyeMicrosaccadeAmplitudeChange,
+    onAutoEyeMicrosaccadeFrequencyChange,
     onAutoBreathAmplitudeChange,
     onAutoBreathSpeedChange,
     updateCharactersModels,
@@ -852,7 +854,15 @@ async function playStarterAnimation() {
 async function onAutoAnimationsEnabledClick() {
     extension_settings.live2d.autoAnimationsEnabled = $('#live2d_auto_animations_enabled').is(':checked');
     saveSettingsDebounced();
-    await loadLive2d();
+    
+    // Если анимации включены, запускаем их для всех загруженных моделей
+    if (extension_settings.live2d.autoAnimationsEnabled) {
+        const { startAutoAnimations, charactersWithModelLoaded } = await import('./live2d.js');
+        const loadedCharacters = charactersWithModelLoaded();
+        for (const character of loadedCharacters) {
+            startAutoAnimations(character);
+        }
+    }
 }
 
 async function onAutoEyeCenterWeightChange() {
@@ -882,6 +892,18 @@ async function onAutoEyeFixationMinChange() {
 async function onAutoEyeFixationMaxChange() {
     extension_settings.live2d.autoEyeFixationMax = Number($('#live2d_auto_eye_fixation_max').val());
     $('#live2d_auto_eye_fixation_max_value').text(extension_settings.live2d.autoEyeFixationMax);
+    saveSettingsDebounced();
+}
+
+async function onAutoEyeMicrosaccadeAmplitudeChange() {
+    extension_settings.live2d.autoEyeMicrosaccadeAmplitude = Number($('#live2d_auto_eye_microsaccade_amplitude').val());
+    $('#live2d_auto_eye_microsaccade_amplitude_value').text(extension_settings.live2d.autoEyeMicrosaccadeAmplitude);
+    saveSettingsDebounced();
+}
+
+async function onAutoEyeMicrosaccadeFrequencyChange() {
+    extension_settings.live2d.autoEyeMicrosaccadeFrequency = Number($('#live2d_auto_eye_microsaccade_frequency').val());
+    $('#live2d_auto_eye_microsaccade_frequency_value').text(extension_settings.live2d.autoEyeMicrosaccadeFrequency);
     saveSettingsDebounced();
 }
 

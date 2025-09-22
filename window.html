@@ -473,7 +473,7 @@
                         <div class="live2d-slider-div">
                             <input id="live2d_auto_eye_amplitude_center" type="range" min="0.1" max="1.0" step="0.05" value="0.25" />
                             <small>
-                                Movement range within center zone
+                                Maximum deviation from center (inner boundary for peripheral zone)
                             </small>
                         </div>
                     </div>
@@ -484,9 +484,9 @@
                             </label>
                         </div>
                         <div class="live2d-slider-div">
-                            <input id="live2d_auto_eye_amplitude_peripheral" type="range" min="0.5" max="2.0" step="0.1" value="1.0" />
+                            <input id="live2d_auto_eye_amplitude_peripheral" type="range" min="0.0" max="2.0" step="0.05" value="1.0" />
                             <small>
-                                Movement range for peripheral glances
+                                Movement range for peripheral glances (0 = no peripheral glances)
                             </small>
                         </div>
                     </div>
@@ -513,6 +513,32 @@
                             <input id="live2d_auto_eye_fixation_max" type="range" min="500" max="3000" step="100" value="2000" />
                             <small>
                                 Maximum time eyes stay fixed on one point
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_auto_eye_microsaccade_amplitude">
+                                Microsaccade amplitude <br/>(<span id="live2d_auto_eye_microsaccade_amplitude_value"></span>)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_auto_eye_microsaccade_amplitude" type="range" min="0.0" max="0.5" step="0.01" value="0.1" />
+                            <small>
+                                Small eye movements during fixation (0 = no microsaccades)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_auto_eye_microsaccade_frequency">
+                                Microsaccade frequency <br/>(<span id="live2d_auto_eye_microsaccade_frequency_value"></span>)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_auto_eye_microsaccade_frequency" type="range" min="0.0" max="1.0" step="0.05" value="0.3" />
+                            <small>
+                                How often microsaccades occur during fixation (0 = never, 1 = always)
                             </small>
                         </div>
                     </div>

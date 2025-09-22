@@ -29,6 +29,7 @@ export {
     setVisible,
     charactersWithModelLoaded,
     forceLoopAnimation,
+    startAutoAnimations,
 };
 
 let models = {};
@@ -37,6 +38,7 @@ let is_talking = {};
 let abortTalking = {};
 let previous_interaction = { 'character': '', 'message': '' };
 let last_motion = {};
+let autoAnimationsRunning = {}; // Track which animations are running for each character
 
 const EXPRESSION_API = {
     local: 0,
@@ -344,11 +346,12 @@ async function loadLive2d(visible = true) {
         model.on('hit', (hitAreas) => onHitAreasClick(character, hitAreas));
         model.on('click', (e) => onClick(model, e.data.global.x,e.data.global.y));
 
-        autoBreathing(character); 
-        autoEyeMovement(character);
-
         // Set cursor behavior
         model.autoInteract = extension_settings.live2d.followCursor;
+        
+        // Start auto animations
+        startAutoAnimations(character);
+        
         console.debug(DEBUG_PREFIX, 'Finished loading model:', model);
     }
     console.debug(DEBUG_PREFIX, 'Models:', models);
@@ -669,17 +672,25 @@ async function autoBreathing(character) {
     // Проверяем, включены ли автоматические анимации
     if (!extension_settings.live2d.autoAnimationsEnabled) return;
     
+    // Отмечаем, что анимация дыхания запущена
+    if (!autoAnimationsRunning[character]) {
+        autoAnimationsRunning[character] = {};
+    }
+    autoAnimationsRunning[character].breathing = true;
+    
     const model_path = extension_settings.live2d.characterModelMapping[character];
     const BREATH_PARAMETER_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamBreath'] || "PARAM_BREATH";
-    const BREATH_SPEED = extension_settings.live2d.autoBreathSpeed || 0.5;
-    const BREATH_AMOUNT = extension_settings.live2d.autoBreathAmplitude || 0.5;
     
     while (true) {
         // Проверяем, что модель всё ещё существует и анимации включены
         if (model?.internalModel?.coreModel === undefined || !extension_settings.live2d.autoAnimationsEnabled) {
             console.debug(DEBUG_PREFIX, 'Model destroyed or animations disabled, stopping breathing animation');
+            autoAnimationsRunning[character].breathing = false;
             break;
         }
+        
+        const BREATH_SPEED = extension_settings.live2d.autoBreathSpeed || 0.5;
+        const BREATH_AMOUNT = extension_settings.live2d.autoBreathAmplitude || 0.5;
         
         const time = Date.now() / 1000; // Текущее время в секундах
         const value = BREATH_AMOUNT * Math.sin(BREATH_SPEED * time);
@@ -688,11 +699,14 @@ async function autoBreathing(character) {
             model.internalModel.coreModel.addParameterValueById(BREATH_PARAMETER_ID, value);
         } catch (error) {
             console.debug(DEBUG_PREFIX, 'Error animating breath parameter:', error);
+            autoAnimationsRunning[character].breathing = false;
             break;
         }
         
         await delay(50); // 20 FPS обновление
     }
+    
+    autoAnimationsRunning[character].breathing = false;
 }
 async function autoEyeMovement(character) {
     const model = models[character];
@@ -701,18 +715,17 @@ async function autoEyeMovement(character) {
     // Проверяем, включены ли автоматические анимации
     if (!extension_settings.live2d.autoAnimationsEnabled) return;
     
+    // Отмечаем, что анимация глаз запущена
+    if (!autoAnimationsRunning[character]) {
+        autoAnimationsRunning[character] = {};
+    }
+    autoAnimationsRunning[character].eyeMovement = true;
+    
     const model_path = extension_settings.live2d.characterModelMapping[character];
     const EYE_X_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamEyeBallX'] || "PARAM_EYE_BALL_X";
     const EYE_Y_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamEyeBallY'] || "PARAM_EYE_BALL_Y";
     
-    // Параметры из настроек
-    const CENTER_WEIGHT = extension_settings.live2d.autoEyeCenterWeight || 0.7;
-    const AMPLITUDE_CENTER = extension_settings.live2d.autoEyeAmplitudeCenter || 0.25;
-    const AMPLITUDE_PERIPHERAL = extension_settings.live2d.autoEyeAmplitudePeripheral || 1.0;
-    const FIXATION_TIME_MIN = extension_settings.live2d.autoEyeFixationMin || 200;
-    const FIXATION_TIME_MAX = extension_settings.live2d.autoEyeFixationMax || 2000;
     const SACCADE_TIME = 30; // Время движения глаз (мс)
-    const MICROSACCADE_AMOUNT = 0.1; // Амплитуда микросаккад
     
     // Текущее положение глаз
     let currentX = 0;
@@ -722,21 +735,34 @@ async function autoEyeMovement(character) {
         // Проверяем, что модель существует и анимации включены
         if (model?.internalModel?.coreModel === undefined || !extension_settings.live2d.autoAnimationsEnabled) {
             console.debug(DEBUG_PREFIX, 'Model destroyed or animations disabled, stopping eye movement');
+            autoAnimationsRunning[character].eyeMovement = false;
             break;
         }
         
         try {
+            // Получаем актуальные параметры из настроек
+            const CENTER_WEIGHT = extension_settings.live2d.autoEyeCenterWeight || 0.7;
+            const AMPLITUDE_CENTER = extension_settings.live2d.autoEyeAmplitudeCenter || 0.25;
+            const AMPLITUDE_PERIPHERAL = extension_settings.live2d.autoEyeAmplitudePeripheral || 1.0;
+            const FIXATION_TIME_MIN = extension_settings.live2d.autoEyeFixationMin || 200;
+            const FIXATION_TIME_MAX = extension_settings.live2d.autoEyeFixationMax || 2000;
+            const MICROSACCADE_AMOUNT = extension_settings.live2d.autoEyeMicrosaccadeAmplitude || 0.1;
+            const MICROSACCADE_FREQUENCY = extension_settings.live2d.autoEyeMicrosaccadeFrequency || 0.3;
+            
             // Определяем следующую точку фиксации
             let targetX, targetY;
             
-            if (Math.random() < CENTER_WEIGHT) {
-                // Смотрим в центральную зону
-                targetX = (Math.random() - 0.5) * AMPLITUDE_CENTER;
-                targetY = (Math.random() - 0.5) * AMPLITUDE_CENTER;
+            // Если peripheral amplitude = 0, всегда смотрим в центральную зону
+            if (AMPLITUDE_PERIPHERAL === 0 || Math.random() < CENTER_WEIGHT) {
+                // Смотрим в центральную зону (AMPLITUDE_CENTER контролирует максимальное отклонение от центра)
+                targetX = (Math.random() - 0.5) * 2 * AMPLITUDE_CENTER; // ±AMPLITUDE_CENTER
+                targetY = (Math.random() - 0.5) * 2 * AMPLITUDE_CENTER; // ±AMPLITUDE_CENTER
             } else {
                 // Смотрим в периферийную зону
-                targetX = (Math.random() - 0.5) * AMPLITUDE_PERIPHERAL;
-                targetY = (Math.random() - 0.5) * AMPLITUDE_PERIPHERAL;
+                const angle = Math.random() * Math.PI * 2; // Случайное направление
+                const distance = AMPLITUDE_CENTER + Math.random() * (AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER);
+                targetX = Math.cos(angle) * distance;
+                targetY = Math.sin(angle) * distance;
             }
             
             // Выполняем саккаду (быстрое движение к новой точке)
@@ -762,19 +788,53 @@ async function autoEyeMovement(character) {
             const startFixationTime = Date.now();
             
             while (Date.now() - startFixationTime < fixationTime) {
-                // Добавляем микросаккады
-                const microsaccadeX = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
-                const microsaccadeY = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
-                
-                model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
-                model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
+                // Добавляем микросаккады с учётом частоты
+                if (Math.random() < MICROSACCADE_FREQUENCY && MICROSACCADE_AMOUNT > 0) {
+                    const microsaccadeX = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
+                    const microsaccadeY = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
+                    
+                    model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
+                    model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
+                } else {
+                    // Возвращаемся к текущей позиции
+                    model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
+                    model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
+                }
                 
                 await delay(50);
             }
             
         } catch (error) {
             console.debug(DEBUG_PREFIX, 'Error animating eyes:', error);
+            autoAnimationsRunning[character].eyeMovement = false;
             break;
         }
+    }
+    
+    autoAnimationsRunning[character].eyeMovement = false;
+}
+
+// Функция для запуска всех автоматических анимаций для персонажа
+async function startAutoAnimations(character) {
+    if (!extension_settings.live2d.autoAnimationsEnabled) {
+        console.debug(DEBUG_PREFIX, 'Auto animations disabled, not starting for', character);
+        return;
+    }
+    
+    console.debug(DEBUG_PREFIX, 'Starting auto animations for', character);
+    
+    // Инициализируем объект отслеживания анимаций
+    if (!autoAnimationsRunning[character]) {
+        autoAnimationsRunning[character] = {};
+    }
+    
+    // Запускаем дыхание, если ещё не запущено
+    if (!autoAnimationsRunning[character].breathing) {
+        autoBreathing(character);
+    }
+    
+    // Запускаем движение глаз, если ещё не запущено
+    if (!autoAnimationsRunning[character].eyeMovement) {
+        autoEyeMovement(character);
     }
 }
