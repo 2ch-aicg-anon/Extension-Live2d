@@ -345,7 +345,7 @@ async function loadLive2d(visible = true) {
         model.on('click', (e) => onClick(model, e.data.global.x,e.data.global.y));
 
         autoBreathing(character); 
-        
+
         // Set cursor behavior
         model.autoInteract = extension_settings.live2d.followCursor;
         console.debug(DEBUG_PREFIX, 'Finished loading model:', model);
@@ -665,21 +665,29 @@ async function autoBreathing(character) {
     const model = models[character];
     if (!model) return;
     
-    const BREATH_PARAMETER_ID = "PARAM_BREATH"; // ID параметра дыхания
+    const model_path = extension_settings.live2d.characterModelMapping[character];
+    const BREATH_PARAMETER_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['param_breath_id'] || "PARAM_BREATH";
     const BREATH_SPEED = 0.5; // Скорость дыхания (можно настроить)
     const BREATH_AMOUNT = 0.5; // Амплитуда дыхания (можно настроить)
     
     while (true) {
-        const time = Date.now() / 1000; // Текущее время в секундах
-        const value = BREATH_AMOUNT * Math.sin(BREATH_SPEED * time);
-        
         // Проверяем, что модель всё ещё существует
         if (model?.internalModel?.coreModel === undefined) {
             console.debug(DEBUG_PREFIX, 'Model destroyed, stopping breathing animation');
             break;
         }
         
-        await setParameter(character, BREATH_PARAMETER_ID, value);
+        const time = Date.now() / 1000; // Текущее время в секундах
+        const value = BREATH_AMOUNT * Math.sin(BREATH_SPEED * time);
+        
+        try {
+            model.internalModel.coreModel.addParameterValueById(BREATH_PARAMETER_ID, value);
+        } catch (error) {
+            console.debug(DEBUG_PREFIX, 'Error animating breath parameter:', error);
+            break;
+        }
+        
         await delay(50); // 20 FPS обновление
     }
 }
+
