@@ -344,6 +344,8 @@ async function loadLive2d(visible = true) {
         model.on('hit', (hitAreas) => onHitAreasClick(character, hitAreas));
         model.on('click', (e) => onClick(model, e.data.global.x,e.data.global.y));
 
+        autoBreathing(character); 
+        
         // Set cursor behavior
         model.autoInteract = extension_settings.live2d.followCursor;
         console.debug(DEBUG_PREFIX, 'Finished loading model:', model);
@@ -571,14 +573,23 @@ async function playTalk(character, text) {
         console.debug(DEBUG_PREFIX,'Model has no addParameterValueById function cannot animate mouth');
         return;
     }
+	
+	is_talking[character] = true;
+	let startTime = Date.now();
+	const duration = text.length * mouth_time_per_character;
+	let turns = 0;
+	let mouth_y = 0;
+	window.live2d_tts_bind = false; // @4eckme
+	while ((Date.now() - startTime) < duration || true) { // @4eckme
+		
+		// start @4eckme
+		model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, -100);
+		while (window.live2d_tts_bind === false) {
+			await delay(20);
+		}
+		// end @4eckme
 
-    is_talking[character] = true;
-    let startTime = Date.now();
-    const duration = text.length * mouth_time_per_character;
-    let turns = 0;
-    let mouth_y = 0;
-    while ((Date.now() - startTime) < duration) {
-        if (abortTalking[character]) {
+		if (abortTalking[character]) {
             console.debug(DEBUG_PREFIX,'Abort talking requested.');
             break;
         }
@@ -648,5 +659,27 @@ function forceLoopAnimation() {
             playMotion(character, last_motion[character]);
             //console.debug(DEBUG_PREFIX,"Force looping of motion",motion);
         }
+    }
+}
+async function autoBreathing(character) {
+    const model = models[character];
+    if (!model) return;
+    
+    const BREATH_PARAMETER_ID = "PARAM_BREATH"; // ID параметра дыхания
+    const BREATH_SPEED = 0.5; // Скорость дыхания (можно настроить)
+    const BREATH_AMOUNT = 0.5; // Амплитуда дыхания (можно настроить)
+    
+    while (true) {
+        const time = Date.now() / 1000; // Текущее время в секундах
+        const value = BREATH_AMOUNT * Math.sin(BREATH_SPEED * time);
+        
+        // Проверяем, что модель всё ещё существует
+        if (model?.internalModel?.coreModel === undefined) {
+            console.debug(DEBUG_PREFIX, 'Model destroyed, stopping breathing animation');
+            break;
+        }
+        
+        await setParameter(character, BREATH_PARAMETER_ID, value);
+        await delay(50); // 20 FPS обновление
     }
 }
