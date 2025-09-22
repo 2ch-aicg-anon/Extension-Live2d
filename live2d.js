@@ -772,41 +772,54 @@ async function autoEyeMovement(character) {
             
             const lookChoice = Math.random();
             
-            if (AMPLITUDE_PERIPHERAL === 0) {
-                // Если peripheral amplitude = 0, всегда смотрим в центральную зону
-                const angle = Math.random() * Math.PI * 2;
-                const distance = Math.random() * AMPLITUDE_CENTER;
-                targetX = Math.cos(angle) * distance;
-                targetY = Math.sin(angle) * distance;
-                console.debug(DEBUG_PREFIX, `Center only: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
-            } else if (lookChoice < (1 - CENTER_WEIGHT)) {
-                // Смотрим в центральную зону ((1-CENTER_WEIGHT)% времени)
-                // CENTER_WEIGHT=0% → 100% времени в центре
-                // CENTER_WEIGHT=70% → 30% времени в центре  
-                // CENTER_WEIGHT=100% → 0% времени в центре
-                if (Math.random() < 0.3) {
-                    // 30% от центральных взглядов - смотрим прямо в центр
+            // CENTER_WEIGHT: 0% = всегда в центре, 100% = всегда по сторонам
+            if (CENTER_WEIGHT === 0 || AMPLITUDE_PERIPHERAL === 0) {
+                // Всегда смотрим в центральную зону
+                if (Math.random() < 0.5) {
+                    // 50% времени - прямо в центр
                     targetX = 0;
                     targetY = 0;
-                    console.debug(DEBUG_PREFIX, `Direct center look: target=(0, 0)`);
+                    console.debug(DEBUG_PREFIX, `Direct center (weight=0): target=(0, 0)`);
                 } else {
-                    // 70% от центральных взглядов - смотрим рядом с центром
+                    // 50% времени - рядом с центром (но только в малом радиусе)
                     const angle = Math.random() * Math.PI * 2;
-                    const distance = Math.random() * AMPLITUDE_CENTER;
+                    const distance = Math.random() * Math.min(AMPLITUDE_CENTER, 0.05); // Ограничиваем центральную зону
                     targetX = Math.cos(angle) * distance;
                     targetY = Math.sin(angle) * distance;
-                    console.debug(DEBUG_PREFIX, `Near center look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
+                    console.debug(DEBUG_PREFIX, `Near center (weight=0): angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
                 }
-            } else {
-                // Смотрим в периферийную зону (CENTER_WEIGHT% времени)
-                // CENTER_WEIGHT=0% → 0% времени по сторонам
-                // CENTER_WEIGHT=70% → 70% времени по сторонам
-                // CENTER_WEIGHT=100% → 100% времени по сторонам
+            } else if (CENTER_WEIGHT === 1) {
+                // Всегда смотрим по сторонам (периферийная зона)
                 const angle = Math.random() * Math.PI * 2;
-                const distance = AMPLITUDE_CENTER + Math.random() * (AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER);
+                const distance = Math.max(AMPLITUDE_CENTER, 0.1) + Math.random() * Math.max(AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER, 0.1);
                 targetX = Math.cos(angle) * distance;
                 targetY = Math.sin(angle) * distance;
-                console.debug(DEBUG_PREFIX, `Peripheral look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
+                console.debug(DEBUG_PREFIX, `Always peripheral (weight=1): angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
+            } else {
+                // Смешанный режим - используем вероятность
+                if (lookChoice < CENTER_WEIGHT) {
+                    // Смотрим в периферийную зону
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = AMPLITUDE_CENTER + Math.random() * (AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER);
+                    targetX = Math.cos(angle) * distance;
+                    targetY = Math.sin(angle) * distance;
+                    console.debug(DEBUG_PREFIX, `Peripheral look (weight=${CENTER_WEIGHT}): angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
+                } else {
+                    // Смотрим в центральную зону
+                    if (Math.random() < 0.3) {
+                        // 30% от центральных взглядов - прямо в центр
+                        targetX = 0;
+                        targetY = 0;
+                        console.debug(DEBUG_PREFIX, `Direct center (weight=${CENTER_WEIGHT}): target=(0, 0)`);
+                    } else {
+                        // 70% от центральных взглядов - рядом с центром
+                        const angle = Math.random() * Math.PI * 2;
+                        const distance = Math.random() * AMPLITUDE_CENTER;
+                        targetX = Math.cos(angle) * distance;
+                        targetY = Math.sin(angle) * distance;
+                        console.debug(DEBUG_PREFIX, `Near center (weight=${CENTER_WEIGHT}): angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
+                    }
+                }
             }
             
             // Плавная интерполяция к новой позиции (саккада)
