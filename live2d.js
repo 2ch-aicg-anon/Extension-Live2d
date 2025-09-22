@@ -704,7 +704,8 @@ async function autoBreathing(character) {
         }
         
         try {
-            model.internalModel.coreModel.addParameterValueById(BREATH_PARAMETER_ID, value);
+            // Используем setParameterValueById вместо addParameterValueById для избежания накопления значений
+            model.internalModel.coreModel.setParameterValueById(BREATH_PARAMETER_ID, value);
         } catch (error) {
             console.debug(DEBUG_PREFIX, 'Error animating breath parameter:', error);
             autoAnimationsRunning[character].breathing = false;
@@ -847,6 +848,7 @@ async function autoEyeMovement(character) {
             // Если микросаккады отключены, просто ждём время фиксации
             if (Number(MICROSACCADE_FREQUENCY) === 0 || Number(MICROSACCADE_AMOUNT) === 0) {
                 console.debug(DEBUG_PREFIX, `Microsaccades disabled - frequency: ${MICROSACCADE_FREQUENCY}, amount: ${MICROSACCADE_AMOUNT}`);
+                console.debug(DEBUG_PREFIX, `Fixation at (${currentX.toFixed(3)}, ${currentY.toFixed(3)}) for ${fixationTime}ms`);
                 await delay(fixationTime);
             } else {
                 console.debug(DEBUG_PREFIX, `Microsaccades enabled - frequency: ${MICROSACCADE_FREQUENCY}, amount: ${MICROSACCADE_AMOUNT}`);
@@ -859,8 +861,11 @@ async function autoEyeMovement(character) {
                         model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
                         model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
                         console.debug(DEBUG_PREFIX, `Microsaccade: X=${(currentX + microsaccadeX).toFixed(3)}, Y=${(currentY + microsaccadeY).toFixed(3)}`);
+                    } else {
+                        // Возвращаемся к текущей позиции
+                        model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentX);
+                        model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentY);
                     }
-                    // Убираем else - не нужно постоянно сбрасывать позицию
                     
                     await delay(50);
                 }
