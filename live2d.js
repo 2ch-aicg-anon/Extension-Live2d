@@ -34,6 +34,7 @@ export {
     restartAutoAnimations,
     autoMicrosaccades,
     setBodyParameter,
+    logModelParameters,
 };
 
 let models = {};
@@ -1037,6 +1038,35 @@ async function startAutoAnimations(character) {
     }
 }
 
+// Функция для вывода всех параметров модели в консоль
+async function logModelParameters(character) {
+    if (models[character] === undefined) {
+        console.debug(DEBUG_PREFIX, 'Model not loaded for character:', character);
+        return;
+    }
+    
+    const model = models[character];
+    
+    try {
+        const parameterIds = model.internalModel.coreModel._model?.parameters?.ids ?? [];
+        console.log(DEBUG_PREFIX, `All parameters for ${character}:`, parameterIds);
+        
+        // Ищем параметры, связанные с телом/углами
+        const bodyParams = parameterIds.filter(id => 
+            id.toLowerCase().includes('body') || 
+            id.toLowerCase().includes('angle') ||
+            id.toLowerCase().includes('torso') ||
+            id.toLowerCase().includes('waist')
+        );
+        console.log(DEBUG_PREFIX, `Body-related parameters for ${character}:`, bodyParams);
+        
+        return parameterIds;
+    } catch (error) {
+        console.debug(DEBUG_PREFIX, `Error getting parameters for ${character}:`, error);
+        return [];
+    }
+}
+
 // Функция для установки параметров тела (для тестирования)
 async function setBodyParameter(character, paramId, paramValue) {
     if (models[character] === undefined) {
@@ -1047,6 +1077,13 @@ async function setBodyParameter(character, paramId, paramValue) {
     const model = models[character];
     
     try {
+        // Сначала проверим, существует ли параметр
+        const parameterIds = model.internalModel.coreModel._model?.parameters?.ids ?? [];
+        if (!parameterIds.includes(paramId)) {
+            console.warn(DEBUG_PREFIX, `Parameter ${paramId} not found in model for ${character}. Available parameters:`, parameterIds);
+            return;
+        }
+        
         // Используем setParameterValueById для установки значения
         model.internalModel.coreModel.setParameterValueById(paramId, paramValue);
         console.debug(DEBUG_PREFIX, `Set body parameter ${paramId} = ${paramValue} for ${character}`);

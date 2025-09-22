@@ -74,6 +74,8 @@ export {
     onBodyAngleYChange,
     onBodyAngleZChange,
     onResetBodyParamsClick,
+    onLogParametersClick,
+    onCustomParamChange,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -1018,4 +1020,42 @@ async function onResetBodyParamsClick() {
     }
     
     console.debug(DEBUG_PREFIX, 'Reset all body parameters to 0');
+}
+
+async function onLogParametersClick() {
+    const { logModelParameters, charactersWithModelLoaded } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    if (loadedCharacters.length === 0) {
+        console.log(DEBUG_PREFIX, 'No characters with loaded models found');
+        alert('No Live2D models loaded. Please load a model first.');
+        return;
+    }
+    
+    console.log(DEBUG_PREFIX, '=== MODEL PARAMETERS DEBUG ===');
+    for (const character of loadedCharacters) {
+        await logModelParameters(character);
+    }
+    console.log(DEBUG_PREFIX, '=== END DEBUG ===');
+    
+    alert('Parameters logged to console! Open Developer Tools (F12) and check the Console tab.');
+}
+
+async function onCustomParamChange() {
+    const paramId = $('#live2d_custom_param_id').val().trim();
+    const value = Number($('#live2d_custom_param_value').val());
+    
+    $('#live2d_custom_param_value_display').text(value.toFixed(1));
+    
+    if (!paramId) {
+        console.debug(DEBUG_PREFIX, 'No parameter ID specified');
+        return;
+    }
+    
+    const { setBodyParameter, charactersWithModelLoaded } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    for (const character of loadedCharacters) {
+        await setBodyParameter(character, paramId, value);
+    }
 }

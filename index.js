@@ -100,6 +100,8 @@ import {
     onBodyAngleYChange,
     onBodyAngleZChange,
     onResetBodyParamsClick,
+    onLogParametersClick,
+    onCustomParamChange,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -416,6 +418,9 @@ jQuery(async () => {
     $('#live2d_body_angle_y').on('input', onBodyAngleYChange);
     $('#live2d_body_angle_z').on('input', onBodyAngleZChange);
     $('#live2d_reset_body_params_button').on('click', onResetBodyParamsClick);
+    $('#live2d_log_parameters_button').on('click', onLogParametersClick);
+    $('#live2d_custom_param_value').on('input', onCustomParamChange);
+    $('#live2d_custom_param_id').on('input', onCustomParamChange);
 
     // Module worker
     const wrapper = new ModuleWorkerWrapper(moduleWorker);

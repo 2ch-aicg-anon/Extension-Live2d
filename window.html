@@ -454,6 +454,22 @@
                     <div class="live2d-parameter">
                         <div class="live2d-parameter-title">
                             <label>
+                                Model Parameters Debug
+                            </label>
+                        </div>
+                        <div>
+                            <div id="live2d_log_parameters_button" class="menu_button">
+                                <i class="fa fa-list" aria-hidden="true"></i>
+                                Log All Parameters
+                            </div>
+                            <small>
+                                Output all available model parameters to console (F12 → Console)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label>
                                 Reset Body Parameters
                             </label>
                         </div>
@@ -464,6 +480,32 @@
                             </div>
                             <small>
                                 Reset all body parameters to their default values (0)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_custom_param_id">
+                                Custom Parameter ID
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_custom_param_id" type="text" placeholder="Enter parameter ID (e.g., PARAM_BODY_ANGLE_X)" />
+                            <small>
+                                Enter the exact parameter name from the console log above
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_custom_param_value">
+                                Custom Parameter Value <br/>(<span id="live2d_custom_param_value_display">0</span>)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_custom_param_value" type="range" min="-30" max="30" step="0.1" value="0" />
+                            <small>
+                                Test the parameter with values from -30 to 30
                             </small>
                         </div>
                     </div>
