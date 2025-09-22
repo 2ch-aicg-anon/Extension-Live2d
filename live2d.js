@@ -345,6 +345,7 @@ async function loadLive2d(visible = true) {
         model.on('click', (e) => onClick(model, e.data.global.x,e.data.global.y));
 
         autoBreathing(character); 
+        autoEyeMovement(character);
 
         // Set cursor behavior
         model.autoInteract = extension_settings.live2d.followCursor;
@@ -690,4 +691,82 @@ async function autoBreathing(character) {
         await delay(50); // 20 FPS обновление
     }
 }
-
+async function autoEyeMovement(character) {
+    const model = models[character];
+    if (!model) return;
+    
+    const model_path = extension_settings.live2d.characterModelMapping[character];
+    const EYE_X_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['param_eye_ball_x_id'] || "PARAM_EYE_BALL_X";
+    const EYE_Y_PARAM_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['param_eye_ball_y_id'] || "PARAM_EYE_BALL_Y";
+    
+    // Константы для настройки поведения
+    const CENTER_WEIGHT = 0.7; // Вероятность смотреть в центральную зону
+    const FIXATION_TIME_MIN = 200; // Минимальное время фиксации (мс)
+    const FIXATION_TIME_MAX = 2000; // Максимальное время фиксации (мс)
+    const SACCADE_TIME = 30; // Время движения глаз (мс)
+    const MICROSACCADE_AMOUNT = 0.1; // Амплитуда микросаккад
+    
+    // Текущее положение глаз
+    let currentX = 0;
+    let currentY = 0;
+    
+    while (true) {
+        // Проверяем, что модель существует
+        if (model?.internalModel?.coreModel === undefined) {
+            console.debug(DEBUG_PREFIX, 'Model destroyed, stopping eye movement');
+            break;
+        }
+        
+        try {
+            // Определяем следующую точку фиксации
+            let targetX, targetY;
+            
+            if (Math.random() < CENTER_WEIGHT) {
+                // Смотрим в центральную зону
+                targetX = (Math.random() - 0.5) * 0.5; // ±0.25
+                targetY = (Math.random() - 0.5) * 0.5; // ±0.25
+            } else {
+                // Смотрим в периферийную зону
+                targetX = (Math.random() - 0.5) * 2; // ±1.0
+                targetY = (Math.random() - 0.5) * 2; // ±1.0
+            }
+            
+            // Выполняем саккаду (быстрое движение к новой точке)
+            const steps = SACCADE_TIME / 50; // 50ms = 20fps
+            for (let i = 0; i < steps; i++) {
+                const progress = i / steps;
+                // Используем функцию плавности для более естественного движения
+                const ease = progress < 0.5 
+                    ? 2 * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                
+                currentX = currentX + (targetX - currentX) * ease;
+                currentY = currentY + (targetY - currentY) * ease;
+                
+                model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX);
+                model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY);
+                
+                await delay(50);
+            }
+            
+            // Фиксация взгляда с микросаккадами
+            const fixationTime = FIXATION_TIME_MIN + Math.random() * (FIXATION_TIME_MAX - FIXATION_TIME_MIN);
+            const startFixationTime = Date.now();
+            
+            while (Date.now() - startFixationTime < fixationTime) {
+                // Добавляем микросаккады
+                const microsaccadeX = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
+                const microsaccadeY = (Math.random() - 0.5) * MICROSACCADE_AMOUNT;
+                
+                model.internalModel.coreModel.addParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
+                model.internalModel.coreModel.addParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
+                
+                await delay(50);
+            }
+            
+        } catch (error) {
+            console.debug(DEBUG_PREFIX, 'Error animating eyes:', error);
+            break;
+        }
+    }
+}
