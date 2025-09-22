@@ -859,11 +859,8 @@ async function autoEyeMovement(character) {
                         model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentX + microsaccadeX);
                         model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentY + microsaccadeY);
                         console.debug(DEBUG_PREFIX, `Microsaccade: X=${(currentX + microsaccadeX).toFixed(3)}, Y=${(currentY + microsaccadeY).toFixed(3)}`);
-                    } else {
-                        // Возвращаемся к текущей позиции
-                        model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentX);
-                        model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentY);
                     }
+                    // Убираем else - не нужно постоянно сбрасывать позицию
                     
                     await delay(50);
                 }
