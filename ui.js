@@ -916,11 +916,20 @@ async function onRestartAnimationsClick() {
     const { restartAutoAnimations, charactersWithModelLoaded } = await import('./live2d.js');
     const loadedCharacters = charactersWithModelLoaded();
     
-    console.debug(DEBUG_PREFIX, 'Restarting animations for all loaded characters:', loadedCharacters);
+    // Показываем текущие настройки для отладки
+    const settings = {
+        enabled: extension_settings.live2d.autoAnimationsEnabled,
+        centerWeight: extension_settings.live2d.autoEyeCenterWeight,
+        centerAmplitude: extension_settings.live2d.autoEyeAmplitudeCenter,
+        peripheralAmplitude: extension_settings.live2d.autoEyeAmplitudePeripheral,
+        followCursor: extension_settings.live2d.followCursor
+    };
+    
+    toastr.info(`Перезапускаем анимации: центр=${Math.round((1-settings.centerWeight)*100)}%, периферия=${Math.round(settings.centerWeight*100)}%, followCursor=${settings.followCursor}`, 'Auto Animations');
     
     for (const character of loadedCharacters) {
         await restartAutoAnimations(character);
     }
     
-    console.debug(DEBUG_PREFIX, 'All animations restarted with current settings');
+    toastr.success('Анимации перезапущены с новыми настройками', 'Auto Animations');
 }

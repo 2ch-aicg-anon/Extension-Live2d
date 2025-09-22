@@ -348,8 +348,8 @@ async function loadLive2d(visible = true) {
         model.on('hit', (hitAreas) => onHitAreasClick(character, hitAreas));
         model.on('click', (e) => onClick(model, e.data.global.x,e.data.global.y));
 
-        // Set cursor behavior
-        model.autoInteract = extension_settings.live2d.followCursor;
+        // Set cursor behavior - отключаем если включены автоматические анимации
+        model.autoInteract = extension_settings.live2d.autoAnimationsEnabled ? false : extension_settings.live2d.followCursor;
         
         // Start auto animations
         startAutoAnimations(character);
@@ -690,7 +690,6 @@ async function autoBreathing(character) {
     while (true) {
         // Проверяем, что модель всё ещё существует и анимации включены
         if (model?.internalModel?.coreModel === undefined || !extension_settings.live2d.autoAnimationsEnabled) {
-            console.debug(DEBUG_PREFIX, 'Model destroyed or animations disabled, stopping breathing animation');
             autoAnimationsRunning[character].breathing = false;
             break;
         }
@@ -701,7 +700,6 @@ async function autoBreathing(character) {
         try {
             model.internalModel.coreModel.addParameterValueById(BREATH_PARAMETER_ID, value);
         } catch (error) {
-            console.debug(DEBUG_PREFIX, 'Error animating breath parameter:', error);
             autoAnimationsRunning[character].breathing = false;
             break;
         }
@@ -737,10 +735,7 @@ async function autoEyeMovement(character) {
     const MICROSACCADE_AMOUNT = extension_settings.live2d.autoEyeMicrosaccadeAmplitude || 0.1;
     const MICROSACCADE_FREQUENCY = extension_settings.live2d.autoEyeMicrosaccadeFrequency || 0.3;
     
-    console.debug(DEBUG_PREFIX, `Eye movement params for ${character}:`, {
-        CENTER_WEIGHT, AMPLITUDE_CENTER, AMPLITUDE_PERIPHERAL, 
-        FIXATION_TIME_MIN, FIXATION_TIME_MAX, MICROSACCADE_AMOUNT, MICROSACCADE_FREQUENCY
-    });
+    // Параметры движения глаз зафиксированы при запуске
     
     // Текущее положение глаз
     let currentX = 0;
@@ -749,7 +744,6 @@ async function autoEyeMovement(character) {
     while (true) {
         // Проверяем, что модель существует и анимации включены
         if (model?.internalModel?.coreModel === undefined || !extension_settings.live2d.autoAnimationsEnabled) {
-            console.debug(DEBUG_PREFIX, 'Model destroyed or animations disabled, stopping eye movement');
             autoAnimationsRunning[character].eyeMovement = false;
             break;
         }
@@ -766,7 +760,6 @@ async function autoEyeMovement(character) {
                 const distance = Math.random() * AMPLITUDE_CENTER;
                 targetX = Math.cos(angle) * distance;
                 targetY = Math.sin(angle) * distance;
-                console.debug(DEBUG_PREFIX, `Center only: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
             } else if (lookChoice < (1 - CENTER_WEIGHT)) {
                 // Смотрим в центральную зону ((1-CENTER_WEIGHT)% времени)
                 // CENTER_WEIGHT=0% → 100% времени в центре
@@ -776,14 +769,12 @@ async function autoEyeMovement(character) {
                     // 30% от центральных взглядов - смотрим прямо в центр
                     targetX = 0;
                     targetY = 0;
-                    console.debug(DEBUG_PREFIX, `Direct center look: target=(0, 0)`);
                 } else {
                     // 70% от центральных взглядов - смотрим рядом с центром
                     const angle = Math.random() * Math.PI * 2;
                     const distance = Math.random() * AMPLITUDE_CENTER;
                     targetX = Math.cos(angle) * distance;
                     targetY = Math.sin(angle) * distance;
-                    console.debug(DEBUG_PREFIX, `Near center look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
                 }
             } else {
                 // Смотрим в периферийную зону (CENTER_WEIGHT% времени)
@@ -794,7 +785,6 @@ async function autoEyeMovement(character) {
                 const distance = AMPLITUDE_CENTER + Math.random() * (AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER);
                 targetX = Math.cos(angle) * distance;
                 targetY = Math.sin(angle) * distance;
-                console.debug(DEBUG_PREFIX, `Peripheral look: angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
             }
             
             // Выполняем саккаду (резкое перемещение к новой точке)
@@ -830,7 +820,6 @@ async function autoEyeMovement(character) {
             }
             
         } catch (error) {
-            console.debug(DEBUG_PREFIX, 'Error animating eyes:', error);
             autoAnimationsRunning[character].eyeMovement = false;
             break;
         }
@@ -841,8 +830,6 @@ async function autoEyeMovement(character) {
 
 // Функция для остановки всех анимаций персонажа
 async function stopAutoAnimations(character) {
-    console.debug(DEBUG_PREFIX, 'Stopping auto animations for', character);
-    
     if (autoAnimationsRunning[character]) {
         autoAnimationsRunning[character].breathing = false;
         autoAnimationsRunning[character].eyeMovement = false;
@@ -854,10 +841,14 @@ async function stopAutoAnimations(character) {
 
 // Функция для перезапуска всех анимаций персонажа
 async function restartAutoAnimations(character) {
-    console.debug(DEBUG_PREFIX, 'Restarting auto animations for', character);
-    
     // Останавливаем текущие анимации
     await stopAutoAnimations(character);
+    
+    // Обновляем cursor behavior для модели
+    const model = models[character];
+    if (model) {
+        model.autoInteract = extension_settings.live2d.autoAnimationsEnabled ? false : extension_settings.live2d.followCursor;
+    }
     
     // Запускаем заново
     await startAutoAnimations(character);
@@ -866,11 +857,8 @@ async function restartAutoAnimations(character) {
 // Функция для запуска всех автоматических анимаций для персонажа
 async function startAutoAnimations(character) {
     if (!extension_settings.live2d.autoAnimationsEnabled) {
-        console.debug(DEBUG_PREFIX, 'Auto animations disabled, not starting for', character);
         return;
     }
-    
-    console.debug(DEBUG_PREFIX, 'Starting auto animations for', character);
     
     // Инициализируем объект отслеживания анимаций
     if (!autoAnimationsRunning[character]) {
