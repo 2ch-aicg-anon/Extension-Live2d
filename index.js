@@ -130,7 +130,7 @@ const defaultSettings = {
 
     // Auto animations settings
     autoAnimationsEnabled: true,
-    autoEyeCenterWeight: 0.7,
+    autoEyeCenterWeight: 0.7, // 0.7 = 70% peripheral focus
     autoEyeAmplitudeCenter: 0.05,
     autoEyeAmplitudePeripheral: 0.2,
     autoEyeFixationMin: 200,
@@ -158,6 +158,11 @@ function loadSettings() {
     }
     if (extension_settings.live2d.autoEyeCenterWeight === undefined) {
         extension_settings.live2d.autoEyeCenterWeight = defaultSettings.autoEyeCenterWeight;
+    }
+    // Конвертация старых значений 0-100 в новые 0-1 (если значение больше 1, значит это старый формат)
+    if (extension_settings.live2d.autoEyeCenterWeight > 1) {
+        extension_settings.live2d.autoEyeCenterWeight = extension_settings.live2d.autoEyeCenterWeight / 100;
+        console.debug(DEBUG_PREFIX, 'Converted old autoEyeCenterWeight format to new format');
     }
     if (extension_settings.live2d.autoEyeAmplitudeCenter === undefined) {
         extension_settings.live2d.autoEyeAmplitudeCenter = defaultSettings.autoEyeAmplitudeCenter;
