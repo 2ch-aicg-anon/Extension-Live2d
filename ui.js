@@ -70,6 +70,10 @@ export {
     onMicrosaccadeIntervalMinChange,
     onMicrosaccadeIntervalMaxChange,
     onRestartAnimationsClick,
+    onBodyAngleXChange,
+    onBodyAngleYChange,
+    onBodyAngleZChange,
+    onResetBodyParamsClick,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -953,4 +957,65 @@ async function onRestartAnimationsClick() {
     }
     
     console.debug(DEBUG_PREFIX, 'All animations restarted with current settings');
+}
+
+// Body parameters testing event handlers
+async function onBodyAngleXChange() {
+    const value = Number($('#live2d_body_angle_x').val());
+    $('#live2d_body_angle_x_value').text(value.toFixed(1));
+    
+    const { setBodyParameter, charactersWithModelLoaded } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    for (const character of loadedCharacters) {
+        await setBodyParameter(character, 'PARAM_BODY_ANGLE_X', value);
+    }
+}
+
+async function onBodyAngleYChange() {
+    const value = Number($('#live2d_body_angle_y').val());
+    $('#live2d_body_angle_y_value').text(value.toFixed(1));
+    
+    const { setBodyParameter, charactersWithModelLoaded } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    for (const character of loadedCharacters) {
+        await setBodyParameter(character, 'PARAM_BODY_ANGLE_Y', value);
+    }
+}
+
+async function onBodyAngleZChange() {
+    const value = Number($('#live2d_body_angle_z').val());
+    $('#live2d_body_angle_z_value').text(value.toFixed(1));
+    
+    const { setBodyParameter, charactersWithModelLoaded } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    for (const character of loadedCharacters) {
+        await setBodyParameter(character, 'PARAM_BODY_ANGLE_Z', value);
+    }
+}
+
+async function onResetBodyParamsClick() {
+    // Reset sliders to 0
+    $('#live2d_body_angle_x').val(0);
+    $('#live2d_body_angle_y').val(0);
+    $('#live2d_body_angle_z').val(0);
+    
+    // Update value displays
+    $('#live2d_body_angle_x_value').text('0.0');
+    $('#live2d_body_angle_y_value').text('0.0');
+    $('#live2d_body_angle_z_value').text('0.0');
+    
+    // Apply to all loaded characters
+    const { setBodyParameter, charactersWithModelLoaded } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    for (const character of loadedCharacters) {
+        await setBodyParameter(character, 'PARAM_BODY_ANGLE_X', 0);
+        await setBodyParameter(character, 'PARAM_BODY_ANGLE_Y', 0);
+        await setBodyParameter(character, 'PARAM_BODY_ANGLE_Z', 0);
+    }
+    
+    console.debug(DEBUG_PREFIX, 'Reset all body parameters to 0');
 }

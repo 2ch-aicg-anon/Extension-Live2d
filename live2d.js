@@ -33,6 +33,7 @@ export {
     stopAutoAnimations,
     restartAutoAnimations,
     autoMicrosaccades,
+    setBodyParameter,
 };
 
 let models = {};
@@ -1033,5 +1034,23 @@ async function startAutoAnimations(character) {
     // Запускаем микросаккады, если ещё не запущены и они включены
     if (!autoAnimationsRunning[character].microsaccades && extension_settings.live2d.microsaccadesEnabled) {
         autoMicrosaccades(character);
+    }
+}
+
+// Функция для установки параметров тела (для тестирования)
+async function setBodyParameter(character, paramId, paramValue) {
+    if (models[character] === undefined) {
+        console.debug(DEBUG_PREFIX, 'Model not loaded for character:', character);
+        return;
+    }
+    
+    const model = models[character];
+    
+    try {
+        // Используем setParameterValueById для установки значения
+        model.internalModel.coreModel.setParameterValueById(paramId, paramValue);
+        console.debug(DEBUG_PREFIX, `Set body parameter ${paramId} = ${paramValue} for ${character}`);
+    } catch (error) {
+        console.debug(DEBUG_PREFIX, `Error setting body parameter ${paramId} for ${character}:`, error);
     }
 }
