@@ -35,6 +35,7 @@ export {
     autoMicrosaccades,
     setBodyParameter,
     logModelParameters,
+    getMouthState,
 };
 
 let models = {};
@@ -1064,5 +1065,43 @@ async function setBodyParameter(character, paramId, paramValue) {
         model.internalModel.coreModel.setParameterValueById(paramId, paramValue);
     } catch (error) {
         console.warn(DEBUG_PREFIX, `Error setting parameter ${paramId} for ${character}:`, error);
+    }
+}
+
+// Функция для получения текущего состояния рта персонажа
+async function getMouthState(character) {
+    if (models[character] === undefined) {
+        console.warn(DEBUG_PREFIX, 'Model not loaded for character:', character);
+        return null;
+    }
+    
+    const model = models[character];
+    const model_path = extension_settings.live2d.characterModelMapping[character];
+    
+    if (!model_path || !extension_settings.live2d.characterModelsSettings[character] || 
+        !extension_settings.live2d.characterModelsSettings[character][model_path]) {
+        console.warn(DEBUG_PREFIX, 'Model settings not found for character:', character);
+        return null;
+    }
+    
+    const mouthParamId = extension_settings.live2d.characterModelsSettings[character][model_path]['param_mouth_open_y_id'];
+    
+    if (!mouthParamId || mouthParamId === 'none') {
+        console.warn(DEBUG_PREFIX, 'No mouth parameter configured for character:', character);
+        return { error: 'No mouth parameter configured' };
+    }
+    
+    try {
+        const currentValue = model.internalModel.coreModel.getParameterValueById(mouthParamId);
+        return {
+            character: character,
+            paramId: mouthParamId,
+            currentValue: currentValue,
+            isOpen: currentValue > -50, // Рот считается открытым если значение больше -50
+            openPercentage: Math.max(0, Math.round(((currentValue + 100) / 200) * 100)) // Преобразуем в проценты от 0 до 100
+        };
+    } catch (error) {
+        console.warn(DEBUG_PREFIX, `Error getting mouth parameter ${mouthParamId} for ${character}:`, error);
+        return { error: `Parameter ${mouthParamId} not found` };
     }
 }

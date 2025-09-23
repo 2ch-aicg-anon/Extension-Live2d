@@ -99,6 +99,7 @@ import {
     onResetCustomParamClick,
     onLogParametersClick,
     onCustomParamChange,
+    onCheckMouthClick,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -415,6 +416,7 @@ jQuery(async () => {
     $('#live2d_log_parameters_button').on('click', onLogParametersClick);
     $('#live2d_custom_param_value').on('input', onCustomParamChange);
     $('#live2d_custom_param_id').on('input', onCustomParamChange);
+    $('#live2d_check_mouth_button').on('click', onCheckMouthClick);
 
     // Module worker
     const wrapper = new ModuleWorkerWrapper(moduleWorker);

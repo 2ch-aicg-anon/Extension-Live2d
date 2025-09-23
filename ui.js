@@ -73,6 +73,7 @@ export {
     onResetCustomParamClick,
     onLogParametersClick,
     onCustomParamChange,
+    onCheckMouthClick,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -1014,4 +1015,43 @@ async function onCustomParamChange() {
     for (const character of loadedCharacters) {
         await setBodyParameter(character, paramId, value);
     }
+}
+
+async function onCheckMouthClick() {
+    const { getMouthState, charactersWithModelLoaded } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    if (loadedCharacters.length === 0) {
+        $('#live2d_mouth_value_display').text('No models loaded');
+        return;
+    }
+    
+    let displayText = '';
+    let allResults = [];
+    
+    for (const character of loadedCharacters) {
+        const mouthState = await getMouthState(character);
+        
+        if (mouthState === null) {
+            allResults.push(`${character}: Model not loaded`);
+        } else if (mouthState.error) {
+            allResults.push(`${character}: ${mouthState.error}`);
+        } else {
+            const statusText = mouthState.isOpen ? 'OPEN' : 'CLOSED';
+            allResults.push(`${character}: ${mouthState.currentValue.toFixed(1)} (${mouthState.openPercentage}% - ${statusText})`);
+            
+            console.log(DEBUG_PREFIX, `Mouth state for ${character}:`, {
+                paramId: mouthState.paramId,
+                currentValue: mouthState.currentValue,
+                isOpen: mouthState.isOpen,
+                openPercentage: mouthState.openPercentage
+            });
+        }
+    }
+    
+    // Отображаем результат в UI
+    displayText = allResults.join(' | ');
+    $('#live2d_mouth_value_display').text(displayText);
+    
+    console.log(DEBUG_PREFIX, 'Mouth check completed for all characters');
 }
