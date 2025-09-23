@@ -73,7 +73,7 @@ export {
     onResetCustomParamClick,
     onLogParametersClick,
     onCustomParamChange,
-    onCheckMouthClick,
+    onMouthLinkedParamChange,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -1017,41 +1017,19 @@ async function onCustomParamChange() {
     }
 }
 
-async function onCheckMouthClick() {
-    const { getMouthState, charactersWithModelLoaded } = await import('./live2d.js');
-    const loadedCharacters = charactersWithModelLoaded();
+async function onMouthLinkedParamChange() {
+    const paramId = $('#live2d_mouth_linked_param_id').val().trim();
+    const minValue = Number($('#live2d_mouth_linked_min').val());
+    const maxValue = Number($('#live2d_mouth_linked_max').val());
     
-    if (loadedCharacters.length === 0) {
-        $('#live2d_mouth_value_display').text('No models loaded');
+    if (!paramId) {
+        console.debug(DEBUG_PREFIX, 'No mouth-linked parameter ID specified');
         return;
     }
     
-    let displayText = '';
-    let allResults = [];
+    // Сохраняем настройки для использования в функции playTalk
+    const { updateMouthLinkedSettings } = await import('./live2d.js');
+    await updateMouthLinkedSettings(paramId, minValue, maxValue);
     
-    for (const character of loadedCharacters) {
-        const mouthState = await getMouthState(character);
-        
-        if (mouthState === null) {
-            allResults.push(`${character}: Model not loaded`);
-        } else if (mouthState.error) {
-            allResults.push(`${character}: ${mouthState.error}`);
-        } else {
-            const statusText = mouthState.isOpen ? 'OPEN' : 'CLOSED';
-            allResults.push(`${character}: ${mouthState.currentValue.toFixed(1)} (${mouthState.openPercentage}% - ${statusText})`);
-            
-            console.log(DEBUG_PREFIX, `Mouth state for ${character}:`, {
-                paramId: mouthState.paramId,
-                currentValue: mouthState.currentValue,
-                isOpen: mouthState.isOpen,
-                openPercentage: mouthState.openPercentage
-            });
-        }
-    }
-    
-    // Отображаем результат в UI
-    displayText = allResults.join(' | ');
-    $('#live2d_mouth_value_display').text(displayText);
-    
-    console.log(DEBUG_PREFIX, 'Mouth check completed for all characters');
+    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter: ${paramId} (${minValue} to ${maxValue})`);
 }

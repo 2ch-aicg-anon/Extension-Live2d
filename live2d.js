@@ -35,7 +35,7 @@ export {
     autoMicrosaccades,
     setBodyParameter,
     logModelParameters,
-    getMouthState,
+    updateMouthLinkedSettings,
 };
 
 let models = {};
@@ -45,6 +45,13 @@ let abortTalking = {};
 let previous_interaction = { 'character': '', 'message': '' };
 let last_motion = {};
 let autoAnimationsRunning = {}; // Track which animations are running for each character
+
+// Настройки для mouth-linked параметра
+let mouthLinkedSettings = {
+    paramId: '',
+    minValue: 0,
+    maxValue: 30
+};
 
 const EXPRESSION_API = {
     local: 0,
@@ -612,13 +619,38 @@ async function playTalk(character, text) {
 
         mouth_y = Math.sin((Date.now() - startTime));
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, mouth_y);
-        //console.debug(DEBUG_PREFIX,"Mouth_y:", mouth_y, "VS",model.internalModel.coreModel.getParameterValueById(parameter_mouth_open_y_id), "remaining time", duration - (Date.now() - startTime));
+        
+        // Управляем дополнительным параметром, если он настроен
+        if (mouthLinkedSettings.paramId && mouthLinkedSettings.paramId !== '') {
+            try {
+                // Преобразуем mouth_y (от -1 до 1) в диапазон min-max
+                // mouth_y = -1 (рот закрыт) -> minValue
+                // mouth_y = 1 (рот открыт) -> maxValue
+                const normalizedValue = (mouth_y + 1) / 2; // Преобразуем от (-1,1) к (0,1)
+                const linkedValue = mouthLinkedSettings.minValue + normalizedValue * (mouthLinkedSettings.maxValue - mouthLinkedSettings.minValue);
+                
+                model.internalModel.coreModel.setParameterValueById(mouthLinkedSettings.paramId, linkedValue);
+            } catch (error) {
+                // Не логируем ошибку каждый кадр, чтобы не спамить консоль
+            }
+        }
+        
         await delay(100 / mouth_open_speed);
         turns += 1;
     }
 
-    if (model?.internalModel?.coreModel !== undefined)
+    if (model?.internalModel?.coreModel !== undefined) {
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, -100); // close mouth
+        
+        // Сбрасываем дополнительный параметр в минимальное значение (рот закрыт)
+        if (mouthLinkedSettings.paramId && mouthLinkedSettings.paramId !== '') {
+            try {
+                model.internalModel.coreModel.setParameterValueById(mouthLinkedSettings.paramId, mouthLinkedSettings.minValue);
+            } catch (error) {
+                // Игнорируем ошибку
+            }
+        }
+    }
     is_talking[character] = false;
 }
 
@@ -1068,40 +1100,11 @@ async function setBodyParameter(character, paramId, paramValue) {
     }
 }
 
-// Функция для получения текущего состояния рта персонажа
-async function getMouthState(character) {
-    if (models[character] === undefined) {
-        console.warn(DEBUG_PREFIX, 'Model not loaded for character:', character);
-        return null;
-    }
+// Функция для обновления настроек mouth-linked параметра
+async function updateMouthLinkedSettings(paramId, minValue, maxValue) {
+    mouthLinkedSettings.paramId = paramId;
+    mouthLinkedSettings.minValue = minValue;
+    mouthLinkedSettings.maxValue = maxValue;
     
-    const model = models[character];
-    const model_path = extension_settings.live2d.characterModelMapping[character];
-    
-    if (!model_path || !extension_settings.live2d.characterModelsSettings[character] || 
-        !extension_settings.live2d.characterModelsSettings[character][model_path]) {
-        console.warn(DEBUG_PREFIX, 'Model settings not found for character:', character);
-        return null;
-    }
-    
-    const mouthParamId = extension_settings.live2d.characterModelsSettings[character][model_path]['param_mouth_open_y_id'];
-    
-    if (!mouthParamId || mouthParamId === 'none') {
-        console.warn(DEBUG_PREFIX, 'No mouth parameter configured for character:', character);
-        return { error: 'No mouth parameter configured' };
-    }
-    
-    try {
-        const currentValue = model.internalModel.coreModel.getParameterValueById(mouthParamId);
-        return {
-            character: character,
-            paramId: mouthParamId,
-            currentValue: currentValue,
-            isOpen: currentValue > -50, // Рот считается открытым если значение больше -50
-            openPercentage: Math.max(0, Math.round(((currentValue + 100) / 200) * 100)) // Преобразуем в проценты от 0 до 100
-        };
-    } catch (error) {
-        console.warn(DEBUG_PREFIX, `Error getting mouth parameter ${mouthParamId} for ${character}:`, error);
-        return { error: `Parameter ${mouthParamId} not found` };
-    }
+    console.debug(DEBUG_PREFIX, 'Updated mouth-linked settings:', mouthLinkedSettings);
 }
