@@ -701,10 +701,6 @@ async function autoBreathing(character) {
         const time = Date.now() / 1000; // Текущее время в секундах
         const value = BREATH_AMOUNT * Math.sin(BREATH_SPEED * time);
         
-        // Отладочная информация - показываем значение дыхания каждые 2 секунды
-        if (Math.floor(time) % 2 === 0 && Math.floor(time * 10) % 10 === 0) {
-            console.debug(DEBUG_PREFIX, `Breath value: ${value.toFixed(3)} (amount=${BREATH_AMOUNT}, speed=${BREATH_SPEED})`);
-        }
         
         try {
             model.internalModel.coreModel.addParameterValueById(BREATH_PARAMETER_ID, value);
@@ -743,10 +739,6 @@ async function autoMicrosaccades(character) {
     const MICROSACCADE_INTERVAL_MIN = extension_settings.live2d.microsaccadeIntervalMin || 300;
     const MICROSACCADE_INTERVAL_MAX = extension_settings.live2d.microsaccadeIntervalMax || 1500;
     
-    console.debug(DEBUG_PREFIX, `Microsaccades params for ${character}:`, {
-        MICROSACCADE_AMPLITUDE, MICROSACCADE_FREQUENCY, MICROSACCADE_DURATION,
-        MICROSACCADE_INTERVAL_MIN, MICROSACCADE_INTERVAL_MAX
-    });
     
     while (true) {
         // Проверяем, что модель существует и анимации включены
@@ -819,7 +811,6 @@ async function autoMicrosaccades(character) {
                 await delay(DRIFT_DELAY);
             }
             
-            console.debug(DEBUG_PREFIX, `Microsaccade: direction=${angle.toFixed(2)}, distance=${distance.toFixed(4)}, duration=${MICROSACCADE_DURATION}ms`);
             
             // Случайный интервал до следующей микросаккады
             const interval = MICROSACCADE_INTERVAL_MIN + Math.random() * (MICROSACCADE_INTERVAL_MAX - MICROSACCADE_INTERVAL_MIN);
@@ -859,10 +850,6 @@ async function autoEyeMovement(character) {
     const FIXATION_TIME_MIN = extension_settings.live2d.autoEyeFixationMin || 200;
     const FIXATION_TIME_MAX = extension_settings.live2d.autoEyeFixationMax || 2000;
     
-    console.debug(DEBUG_PREFIX, `Eye movement params for ${character}:`, {
-        CENTER_WEIGHT, AMPLITUDE_CENTER, AMPLITUDE_PERIPHERAL,
-        FIXATION_TIME_MIN, FIXATION_TIME_MAX
-    });
     
     // Текущее положение глаз
     let currentX = 0;
@@ -898,14 +885,12 @@ async function autoEyeMovement(character) {
                     // 50% времени - прямо в центр
                     targetX = 0;
                     targetY = 0;
-                    console.debug(DEBUG_PREFIX, `Direct center (weight=0): target=(0, 0)`);
                 } else {
                     // 50% времени - рядом с центром (но только в малом радиусе)
                     const angle = Math.random() * Math.PI * 2;
                     const distance = Math.random() * Math.min(AMPLITUDE_CENTER, 0.05); // Ограничиваем центральную зону
                     targetX = Math.cos(angle) * distance;
                     targetY = Math.sin(angle) * distance;
-                    console.debug(DEBUG_PREFIX, `Near center (weight=0): angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
                 }
             } else if (CENTER_WEIGHT === 1) {
                 // Всегда смотрим по сторонам (периферийная зона)
@@ -913,7 +898,6 @@ async function autoEyeMovement(character) {
                 const distance = Math.max(AMPLITUDE_CENTER, 0.1) + Math.random() * Math.max(AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER, 0.1);
                 targetX = Math.cos(angle) * distance;
                 targetY = Math.sin(angle) * distance;
-                console.debug(DEBUG_PREFIX, `Always peripheral (weight=1): angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
             } else {
                 // Смешанный режим - используем вероятность
                 if (lookChoice < CENTER_WEIGHT) {
@@ -922,21 +906,18 @@ async function autoEyeMovement(character) {
                     const distance = AMPLITUDE_CENTER + Math.random() * (AMPLITUDE_PERIPHERAL - AMPLITUDE_CENTER);
                     targetX = Math.cos(angle) * distance;
                     targetY = Math.sin(angle) * distance;
-                    console.debug(DEBUG_PREFIX, `Peripheral look (weight=${CENTER_WEIGHT}): angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
                 } else {
                     // Смотрим в центральную зону
                     if (Math.random() < 0.3) {
                         // 30% от центральных взглядов - прямо в центр
                         targetX = 0;
                         targetY = 0;
-                        console.debug(DEBUG_PREFIX, `Direct center (weight=${CENTER_WEIGHT}): target=(0, 0)`);
                     } else {
                         // 70% от центральных взглядов - рядом с центром
                         const angle = Math.random() * Math.PI * 2;
                         const distance = Math.random() * AMPLITUDE_CENTER;
                         targetX = Math.cos(angle) * distance;
                         targetY = Math.sin(angle) * distance;
-                        console.debug(DEBUG_PREFIX, `Near center (weight=${CENTER_WEIGHT}): angle=${angle.toFixed(2)}, distance=${distance.toFixed(2)}, target=(${targetX.toFixed(2)}, ${targetY.toFixed(2)})`);
                     }
                 }
             }
@@ -957,9 +938,6 @@ async function autoEyeMovement(character) {
                 model.internalModel.coreModel.setParameterValueById(EYE_X_PARAM_ID, currentPosX);
                 model.internalModel.coreModel.setParameterValueById(EYE_Y_PARAM_ID, currentPosY);
                 
-                if (step === SACCADE_STEPS) {
-                    console.debug(DEBUG_PREFIX, `Final eye position: X=${currentPosX.toFixed(3)}, Y=${currentPosY.toFixed(3)}`);
-                }
                 
                 await delay(SACCADE_DELAY);
             }
@@ -970,7 +948,6 @@ async function autoEyeMovement(character) {
             
             // Фиксация взгляда (просто ждём случайное время)
             const fixationTime = FIXATION_TIME_MIN + Math.random() * (FIXATION_TIME_MAX - FIXATION_TIME_MIN);
-            console.debug(DEBUG_PREFIX, `Fixation for ${fixationTime.toFixed(0)}ms`);
             await delay(fixationTime);
             
         } catch (error) {
@@ -1067,10 +1044,9 @@ async function logModelParameters(character) {
     }
 }
 
-// Функция для установки параметров тела (для тестирования)
+// Функция для установки параметров (для тестирования)
 async function setBodyParameter(character, paramId, paramValue) {
     if (models[character] === undefined) {
-        console.debug(DEBUG_PREFIX, 'Model not loaded for character:', character);
         return;
     }
     
@@ -1080,14 +1056,13 @@ async function setBodyParameter(character, paramId, paramValue) {
         // Сначала проверим, существует ли параметр
         const parameterIds = model.internalModel.coreModel._model?.parameters?.ids ?? [];
         if (!parameterIds.includes(paramId)) {
-            console.warn(DEBUG_PREFIX, `Parameter ${paramId} not found in model for ${character}. Available parameters:`, parameterIds);
+            console.warn(DEBUG_PREFIX, `Parameter ${paramId} not found in model for ${character}`);
             return;
         }
         
         // Используем setParameterValueById для установки значения
         model.internalModel.coreModel.setParameterValueById(paramId, paramValue);
-        console.debug(DEBUG_PREFIX, `Set body parameter ${paramId} = ${paramValue} for ${character}`);
     } catch (error) {
-        console.debug(DEBUG_PREFIX, `Error setting body parameter ${paramId} for ${character}:`, error);
+        console.warn(DEBUG_PREFIX, `Error setting parameter ${paramId} for ${character}:`, error);
     }
 }

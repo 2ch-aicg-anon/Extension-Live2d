@@ -96,10 +96,7 @@ import {
     onMicrosaccadeIntervalMinChange,
     onMicrosaccadeIntervalMaxChange,
     onRestartAnimationsClick,
-    onBodyAngleXChange,
-    onBodyAngleYChange,
-    onBodyAngleZChange,
-    onResetBodyParamsClick,
+    onResetCustomParamClick,
     onLogParametersClick,
     onCustomParamChange,
     updateCharactersModels,
@@ -413,11 +410,8 @@ jQuery(async () => {
     
     $('#live2d_restart_animations_button').on('click', onRestartAnimationsClick);
     
-    // Body parameters testing event handlers
-    $('#live2d_body_angle_x').on('input', onBodyAngleXChange);
-    $('#live2d_body_angle_y').on('input', onBodyAngleYChange);
-    $('#live2d_body_angle_z').on('input', onBodyAngleZChange);
-    $('#live2d_reset_body_params_button').on('click', onResetBodyParamsClick);
+    // Custom parameter testing event handlers
+    $('#live2d_reset_custom_param_button').on('click', onResetCustomParamClick);
     $('#live2d_log_parameters_button').on('click', onLogParametersClick);
     $('#live2d_custom_param_value').on('input', onCustomParamChange);
     $('#live2d_custom_param_id').on('input', onCustomParamChange);
