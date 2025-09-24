@@ -99,7 +99,9 @@ import {
     onResetCustomParamClick,
     onLogParametersClick,
     onCustomParamChange,
-    onMouthLinkedParamChange,
+    onMouthLinkedParam1Change,
+    onMouthLinkedParam2Change,
+    onMouthLinkedParam3Change,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -416,9 +418,15 @@ jQuery(async () => {
     $('#live2d_log_parameters_button').on('click', onLogParametersClick);
     $('#live2d_custom_param_value').on('input', onCustomParamChange);
     $('#live2d_custom_param_id').on('input', onCustomParamChange);
-    $('#live2d_mouth_linked_param_id').on('input', onMouthLinkedParamChange);
-    $('#live2d_mouth_linked_min').on('input', onMouthLinkedParamChange);
-    $('#live2d_mouth_linked_max').on('input', onMouthLinkedParamChange);
+    $('#live2d_mouth_linked_param_id_1').on('input', onMouthLinkedParam1Change);
+    $('#live2d_mouth_linked_min_1').on('input', onMouthLinkedParam1Change);
+    $('#live2d_mouth_linked_max_1').on('input', onMouthLinkedParam1Change);
+    $('#live2d_mouth_linked_param_id_2').on('input', onMouthLinkedParam2Change);
+    $('#live2d_mouth_linked_min_2').on('input', onMouthLinkedParam2Change);
+    $('#live2d_mouth_linked_max_2').on('input', onMouthLinkedParam2Change);
+    $('#live2d_mouth_linked_param_id_3').on('input', onMouthLinkedParam3Change);
+    $('#live2d_mouth_linked_min_3').on('input', onMouthLinkedParam3Change);
+    $('#live2d_mouth_linked_max_3').on('input', onMouthLinkedParam3Change);
 
     // Module worker
     const wrapper = new ModuleWorkerWrapper(moduleWorker);

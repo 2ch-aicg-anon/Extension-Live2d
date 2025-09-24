@@ -46,11 +46,13 @@ let previous_interaction = { 'character': '', 'message': '' };
 let last_motion = {};
 let autoAnimationsRunning = {}; // Track which animations are running for each character
 
-// Настройки для mouth-linked параметра
+// Настройки для mouth-linked параметров (до 3 параметров)
 let mouthLinkedSettings = {
-    paramId: '',
-    minValue: 0,
-    maxValue: 30
+    params: [
+        { paramId: '', minValue: 0, maxValue: 30 },   // Parameter 1
+        { paramId: '', minValue: 0, maxValue: -15 },  // Parameter 2
+        { paramId: '', minValue: 0, maxValue: 10 }    // Parameter 3
+    ]
 };
 
 const EXPRESSION_API = {
@@ -620,18 +622,21 @@ async function playTalk(character, text) {
         mouth_y = Math.sin((Date.now() - startTime));
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, mouth_y);
         
-        // Управляем дополнительным параметром, если он настроен
-        if (mouthLinkedSettings.paramId && mouthLinkedSettings.paramId !== '') {
-            try {
-                // Преобразуем mouth_y (от -1 до 1) в диапазон min-max
-                // mouth_y = -1 (рот закрыт) -> minValue
-                // mouth_y = 1 (рот открыт) -> maxValue
-                const normalizedValue = (mouth_y + 1) / 2; // Преобразуем от (-1,1) к (0,1)
-                const linkedValue = mouthLinkedSettings.minValue + normalizedValue * (mouthLinkedSettings.maxValue - mouthLinkedSettings.minValue);
-                
-                model.internalModel.coreModel.setParameterValueById(mouthLinkedSettings.paramId, linkedValue);
-            } catch (error) {
-                // Не логируем ошибку каждый кадр, чтобы не спамить консоль
+        // Управляем дополнительными параметрами, если они настроены
+        for (let i = 0; i < mouthLinkedSettings.params.length; i++) {
+            const param = mouthLinkedSettings.params[i];
+            if (param.paramId && param.paramId !== '') {
+                try {
+                    // Преобразуем mouth_y (от -1 до 1) в диапазон min-max
+                    // mouth_y = -1 (рот закрыт) -> minValue
+                    // mouth_y = 1 (рот открыт) -> maxValue
+                    const normalizedValue = (mouth_y + 1) / 2; // Преобразуем от (-1,1) к (0,1)
+                    const linkedValue = param.minValue + normalizedValue * (param.maxValue - param.minValue);
+                    
+                    model.internalModel.coreModel.setParameterValueById(param.paramId, linkedValue);
+                } catch (error) {
+                    // Не логируем ошибку каждый кадр, чтобы не спамить консоль
+                }
             }
         }
         
@@ -642,12 +647,15 @@ async function playTalk(character, text) {
     if (model?.internalModel?.coreModel !== undefined) {
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, -100); // close mouth
         
-        // Сбрасываем дополнительный параметр в минимальное значение (рот закрыт)
-        if (mouthLinkedSettings.paramId && mouthLinkedSettings.paramId !== '') {
-            try {
-                model.internalModel.coreModel.setParameterValueById(mouthLinkedSettings.paramId, mouthLinkedSettings.minValue);
-            } catch (error) {
-                // Игнорируем ошибку
+        // Сбрасываем дополнительные параметры в минимальные значения (рот закрыт)
+        for (let i = 0; i < mouthLinkedSettings.params.length; i++) {
+            const param = mouthLinkedSettings.params[i];
+            if (param.paramId && param.paramId !== '') {
+                try {
+                    model.internalModel.coreModel.setParameterValueById(param.paramId, param.minValue);
+                } catch (error) {
+                    // Игнорируем ошибку
+                }
             }
         }
     }
@@ -1101,10 +1109,12 @@ async function setBodyParameter(character, paramId, paramValue) {
 }
 
 // Функция для обновления настроек mouth-linked параметра
-async function updateMouthLinkedSettings(paramId, minValue, maxValue) {
-    mouthLinkedSettings.paramId = paramId;
-    mouthLinkedSettings.minValue = minValue;
-    mouthLinkedSettings.maxValue = maxValue;
-    
-    console.debug(DEBUG_PREFIX, 'Updated mouth-linked settings:', mouthLinkedSettings);
+async function updateMouthLinkedSettings(index, paramId, minValue, maxValue) {
+    if (index >= 0 && index < mouthLinkedSettings.params.length) {
+        mouthLinkedSettings.params[index].paramId = paramId;
+        mouthLinkedSettings.params[index].minValue = minValue;
+        mouthLinkedSettings.params[index].maxValue = maxValue;
+        
+        console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter ${index + 1}:`, mouthLinkedSettings.params[index]);
+    }
 }

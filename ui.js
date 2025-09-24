@@ -73,7 +73,9 @@ export {
     onResetCustomParamClick,
     onLogParametersClick,
     onCustomParamChange,
-    onMouthLinkedParamChange,
+    onMouthLinkedParam1Change,
+    onMouthLinkedParam2Change,
+    onMouthLinkedParam3Change,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -1017,19 +1019,38 @@ async function onCustomParamChange() {
     }
 }
 
-async function onMouthLinkedParamChange() {
-    const paramId = $('#live2d_mouth_linked_param_id').val().trim();
-    const minValue = Number($('#live2d_mouth_linked_min').val());
-    const maxValue = Number($('#live2d_mouth_linked_max').val());
-    
-    if (!paramId) {
-        console.debug(DEBUG_PREFIX, 'No mouth-linked parameter ID specified');
-        return;
-    }
+async function onMouthLinkedParam1Change() {
+    const paramId = $('#live2d_mouth_linked_param_id_1').val().trim();
+    const minValue = Number($('#live2d_mouth_linked_min_1').val());
+    const maxValue = Number($('#live2d_mouth_linked_max_1').val());
     
     // Сохраняем настройки для использования в функции playTalk
     const { updateMouthLinkedSettings } = await import('./live2d.js');
-    await updateMouthLinkedSettings(paramId, minValue, maxValue);
+    await updateMouthLinkedSettings(0, paramId, minValue, maxValue); // Index 0 для первого параметра
     
-    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter: ${paramId} (${minValue} to ${maxValue})`);
+    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 1: ${paramId} (${minValue} to ${maxValue})`);
+}
+
+async function onMouthLinkedParam2Change() {
+    const paramId = $('#live2d_mouth_linked_param_id_2').val().trim();
+    const minValue = Number($('#live2d_mouth_linked_min_2').val());
+    const maxValue = Number($('#live2d_mouth_linked_max_2').val());
+    
+    // Сохраняем настройки для использования в функции playTalk
+    const { updateMouthLinkedSettings } = await import('./live2d.js');
+    await updateMouthLinkedSettings(1, paramId, minValue, maxValue); // Index 1 для второго параметра
+    
+    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 2: ${paramId} (${minValue} to ${maxValue})`);
+}
+
+async function onMouthLinkedParam3Change() {
+    const paramId = $('#live2d_mouth_linked_param_id_3').val().trim();
+    const minValue = Number($('#live2d_mouth_linked_min_3').val());
+    const maxValue = Number($('#live2d_mouth_linked_max_3').val());
+    
+    // Сохраняем настройки для использования в функции playTalk
+    const { updateMouthLinkedSettings } = await import('./live2d.js');
+    await updateMouthLinkedSettings(2, paramId, minValue, maxValue); // Index 2 для третьего параметра
+    
+    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 3: ${paramId} (${minValue} to ${maxValue})`);
 }
