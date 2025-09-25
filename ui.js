@@ -457,6 +457,11 @@ async function loadModelUi() {
             'param_mouth_open_y_id': 'none',
             'mouth_open_speed': 1.0,
             'mouth_time_per_character': 30,
+            'mouth_linked_params': {
+                'param1': { 'paramId': '', 'minValue': 0, 'maxValue': 30 },
+                'param2': { 'paramId': '', 'minValue': 0, 'maxValue': -15 },
+                'param3': { 'paramId': '', 'minValue': 0, 'maxValue': 10 }
+            },
             'animation_starter': { 'expression': 'none', 'motion': 'none', 'delay': 0 },
             'animation_default': { 'expression': 'none', 'motion': 'none' },
             'animation_click': { 'expression': 'none', 'motion': 'none', 'message': '' },
@@ -531,6 +536,40 @@ async function loadModelUi() {
 
 	// MouthAnimations
     loadModelParamUi(character, model_path, model_parameter_ids, 'live2d_model_param_mouth_open_y_select', 'ParamMouthOpenY', user_settings_exists);
+
+    // Load mouth-linked parameters for this character and model
+    if (extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']) {
+        $('#live2d_mouth_linked_param_id_1').val(extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param1']['paramId']);
+        $('#live2d_mouth_linked_min_1').val(extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param1']['minValue']);
+        $('#live2d_mouth_linked_max_1').val(extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param1']['maxValue']);
+        
+        $('#live2d_mouth_linked_param_id_2').val(extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param2']['paramId']);
+        $('#live2d_mouth_linked_min_2').val(extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param2']['minValue']);
+        $('#live2d_mouth_linked_max_2').val(extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param2']['maxValue']);
+        
+        $('#live2d_mouth_linked_param_id_3').val(extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param3']['paramId']);
+        $('#live2d_mouth_linked_min_3').val(extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param3']['minValue']);
+        $('#live2d_mouth_linked_max_3').val(extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param3']['maxValue']);
+    } else {
+        // Initialize if not exists
+        extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params'] = {
+            'param1': { 'paramId': '', 'minValue': 0, 'maxValue': 30 },
+            'param2': { 'paramId': '', 'minValue': 0, 'maxValue': -15 },
+            'param3': { 'paramId': '', 'minValue': 0, 'maxValue': 10 }
+        };
+        saveSettingsDebounced();
+        
+        // Load defaults in UI
+        $('#live2d_mouth_linked_param_id_1').val('');
+        $('#live2d_mouth_linked_min_1').val(0);
+        $('#live2d_mouth_linked_max_1').val(30);
+        $('#live2d_mouth_linked_param_id_2').val('');
+        $('#live2d_mouth_linked_min_2').val(0);
+        $('#live2d_mouth_linked_max_2').val(-15);
+        $('#live2d_mouth_linked_param_id_3').val('');
+        $('#live2d_mouth_linked_min_3').val(0);
+        $('#live2d_mouth_linked_max_3').val(10);
+    }
 
     // Mouse tracking parameters
     loadModelParamUi(character, model_path, model_parameter_ids, 'live2d_model_param_angle_x_select', 'idParamAngleX', user_settings_exists);
@@ -1020,37 +1059,100 @@ async function onCustomParamChange() {
 }
 
 async function onMouthLinkedParam1Change() {
+    const character = String($('#live2d_character_select').val());
+    const model_path = String($('#live2d_model_select').val());
+    
+    if (character === 'none' || model_path === 'none') {
+        return;
+    }
+    
     const paramId = $('#live2d_mouth_linked_param_id_1').val().trim();
     const minValue = Number($('#live2d_mouth_linked_min_1').val());
     const maxValue = Number($('#live2d_mouth_linked_max_1').val());
     
-    // Сохраняем настройки для использования в функции playTalk
+    // Сохраняем в настройки для конкретного персонажа и модели
+    if (!extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']) {
+        extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params'] = {
+            'param1': { 'paramId': '', 'minValue': 0, 'maxValue': 30 },
+            'param2': { 'paramId': '', 'minValue': 0, 'maxValue': -15 },
+            'param3': { 'paramId': '', 'minValue': 0, 'maxValue': 10 }
+        };
+    }
+    
+    extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param1']['paramId'] = paramId;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param1']['minValue'] = minValue;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param1']['maxValue'] = maxValue;
+    saveSettingsDebounced();
+    
+    // Также обновляем в live2d.js для использования в функции playTalk
     const { updateMouthLinkedSettings } = await import('./live2d.js');
     await updateMouthLinkedSettings(0, paramId, minValue, maxValue); // Index 0 для первого параметра
     
-    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 1: ${paramId} (${minValue} to ${maxValue})`);
+    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 1 for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
 }
 
 async function onMouthLinkedParam2Change() {
+    const character = String($('#live2d_character_select').val());
+    const model_path = String($('#live2d_model_select').val());
+    
+    if (character === 'none' || model_path === 'none') {
+        return;
+    }
+    
     const paramId = $('#live2d_mouth_linked_param_id_2').val().trim();
     const minValue = Number($('#live2d_mouth_linked_min_2').val());
     const maxValue = Number($('#live2d_mouth_linked_max_2').val());
     
-    // Сохраняем настройки для использования в функции playTalk
+    // Сохраняем в настройки для конкретного персонажа и модели
+    if (!extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']) {
+        extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params'] = {
+            'param1': { 'paramId': '', 'minValue': 0, 'maxValue': 30 },
+            'param2': { 'paramId': '', 'minValue': 0, 'maxValue': -15 },
+            'param3': { 'paramId': '', 'minValue': 0, 'maxValue': 10 }
+        };
+    }
+    
+    extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param2']['paramId'] = paramId;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param2']['minValue'] = minValue;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param2']['maxValue'] = maxValue;
+    saveSettingsDebounced();
+    
+    // Также обновляем в live2d.js для использования в функции playTalk
     const { updateMouthLinkedSettings } = await import('./live2d.js');
     await updateMouthLinkedSettings(1, paramId, minValue, maxValue); // Index 1 для второго параметра
     
-    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 2: ${paramId} (${minValue} to ${maxValue})`);
+    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 2 for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
 }
 
 async function onMouthLinkedParam3Change() {
+    const character = String($('#live2d_character_select').val());
+    const model_path = String($('#live2d_model_select').val());
+    
+    if (character === 'none' || model_path === 'none') {
+        return;
+    }
+    
     const paramId = $('#live2d_mouth_linked_param_id_3').val().trim();
     const minValue = Number($('#live2d_mouth_linked_min_3').val());
     const maxValue = Number($('#live2d_mouth_linked_max_3').val());
     
-    // Сохраняем настройки для использования в функции playTalk
+    // Сохраняем в настройки для конкретного персонажа и модели
+    if (!extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']) {
+        extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params'] = {
+            'param1': { 'paramId': '', 'minValue': 0, 'maxValue': 30 },
+            'param2': { 'paramId': '', 'minValue': 0, 'maxValue': -15 },
+            'param3': { 'paramId': '', 'minValue': 0, 'maxValue': 10 }
+        };
+    }
+    
+    extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param3']['paramId'] = paramId;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param3']['minValue'] = minValue;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param3']['maxValue'] = maxValue;
+    saveSettingsDebounced();
+    
+    // Также обновляем в live2d.js для использования в функции playTalk
     const { updateMouthLinkedSettings } = await import('./live2d.js');
     await updateMouthLinkedSettings(2, paramId, minValue, maxValue); // Index 2 для третьего параметра
     
-    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 3: ${paramId} (${minValue} to ${maxValue})`);
+    console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 3 for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
 }

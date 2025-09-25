@@ -161,6 +161,13 @@ const defaultSettings = {
     // Character model mapping
     characterModelMapping: {},
     characterModelsSettings: {},
+    
+    // Default mouth-linked parameters settings
+    mouthLinkedDefaults: {
+        param1: { paramId: '', minValue: 0, maxValue: 30 },
+        param2: { paramId: '', minValue: 0, maxValue: -15 },
+        param3: { paramId: '', minValue: 0, maxValue: 10 }
+    },
 };
 
 function loadSettings() {
@@ -221,6 +228,11 @@ function loadSettings() {
     }
     if (extension_settings.live2d.microsaccadeIntervalMax === undefined) {
         extension_settings.live2d.microsaccadeIntervalMax = defaultSettings.microsaccadeIntervalMax;
+    }
+
+    // Ensure mouth-linked parameters defaults exist
+    if (extension_settings.live2d.mouthLinkedDefaults === undefined) {
+        extension_settings.live2d.mouthLinkedDefaults = defaultSettings.mouthLinkedDefaults;
     }
 
     $('#live2d_enabled_checkbox').prop('checked', extension_settings.live2d.enabled);
