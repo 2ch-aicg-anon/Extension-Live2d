@@ -615,6 +615,74 @@
                         </div>
                     </div>
                     <div>
+                        <h4>Body Movement System</h4>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_body_movement_enabled">
+                                <input id="live2d_body_movement_enabled" type="checkbox" checked />
+                                Enable Advanced Body Movement
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <small>
+                                Enables natural body movements with multi-layered noise, physics, and state-based behavior
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_body_movement_idle_intensity">
+                                Idle Movement Intensity <br/>(<span id="live2d_body_movement_idle_intensity_value"></span>)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_body_movement_idle_intensity" type="range" min="0.0" max="1.0" step="0.05" value="0.3" />
+                            <small>
+                                How much the body moves when character is not talking (0 = still, 1 = very active)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_body_movement_talking_intensity">
+                                Talking Movement Intensity <br/>(<span id="live2d_body_movement_talking_intensity_value"></span>)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_body_movement_talking_intensity" type="range" min="0.0" max="1.0" step="0.05" value="0.6" />
+                            <small>
+                                How much the body moves when character is talking (0 = still, 1 = very animated)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_body_movement_impulse_chance">
+                                Impulse Frequency <br/>(<span id="live2d_body_movement_impulse_chance_value"></span>%)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_body_movement_impulse_chance" type="range" min="0" max="10" step="0.5" value="2" />
+                            <small>
+                                Chance of sudden movements/gestures (0 = never, 10 = very frequent)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_body_movement_smoothness">
+                                Movement Smoothness <br/>(<span id="live2d_body_movement_smoothness_value"></span>)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_body_movement_smoothness" type="range" min="0.5" max="0.99" step="0.01" value="0.85" />
+                            <small>
+                                How smooth movements are (0.5 = jerky, 0.99 = very smooth)
+                            </small>
+                        </div>
+                    </div>
+                    <div>
                         <h4>Auto Animations</h4>
                     </div>
                     <div class="live2d-parameter">

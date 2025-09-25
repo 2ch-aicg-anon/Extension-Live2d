@@ -102,6 +102,11 @@ import {
     onMouthLinkedParam1Change,
     onMouthLinkedParam2Change,
     onMouthLinkedParam3Change,
+    onBodyMovementEnabledClick,
+    onBodyMovementIdleIntensityChange,
+    onBodyMovementTalkingIntensityChange,
+    onBodyMovementImpulseChanceChange,
+    onBodyMovementSmoothnessChange,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -168,6 +173,13 @@ const defaultSettings = {
         param2: { paramId: '', minValue: 0, maxValue: -15 },
         param3: { paramId: '', minValue: 0, maxValue: 10 }
     },
+    
+    // Body movement system settings
+    bodyMovementEnabled: true,
+    bodyMovementIdleIntensity: 0.3,
+    bodyMovementTalkingIntensity: 0.6,
+    bodyMovementImpulseChance: 2,
+    bodyMovementSmoothness: 0.85,
 };
 
 function loadSettings() {
@@ -235,6 +247,23 @@ function loadSettings() {
         extension_settings.live2d.mouthLinkedDefaults = defaultSettings.mouthLinkedDefaults;
     }
 
+    // Ensure body movement settings exist with defaults
+    if (extension_settings.live2d.bodyMovementEnabled === undefined) {
+        extension_settings.live2d.bodyMovementEnabled = defaultSettings.bodyMovementEnabled;
+    }
+    if (extension_settings.live2d.bodyMovementIdleIntensity === undefined) {
+        extension_settings.live2d.bodyMovementIdleIntensity = defaultSettings.bodyMovementIdleIntensity;
+    }
+    if (extension_settings.live2d.bodyMovementTalkingIntensity === undefined) {
+        extension_settings.live2d.bodyMovementTalkingIntensity = defaultSettings.bodyMovementTalkingIntensity;
+    }
+    if (extension_settings.live2d.bodyMovementImpulseChance === undefined) {
+        extension_settings.live2d.bodyMovementImpulseChance = defaultSettings.bodyMovementImpulseChance;
+    }
+    if (extension_settings.live2d.bodyMovementSmoothness === undefined) {
+        extension_settings.live2d.bodyMovementSmoothness = defaultSettings.bodyMovementSmoothness;
+    }
+
     $('#live2d_enabled_checkbox').prop('checked', extension_settings.live2d.enabled);
     $('#live2d_follow_cursor_checkbox').prop('checked', extension_settings.live2d.followCursor);
     $('#live2d_auto_send_interaction_checkbox').prop('checked', extension_settings.live2d.autoSendInteraction);
@@ -272,6 +301,17 @@ function loadSettings() {
     $('#live2d_microsaccade_interval_min_value').text(extension_settings.live2d.microsaccadeIntervalMin);
     $('#live2d_microsaccade_interval_max').val(extension_settings.live2d.microsaccadeIntervalMax);
     $('#live2d_microsaccade_interval_max_value').text(extension_settings.live2d.microsaccadeIntervalMax);
+    
+    // Body movement settings
+    $('#live2d_body_movement_enabled').prop('checked', extension_settings.live2d.bodyMovementEnabled);
+    $('#live2d_body_movement_idle_intensity').val(extension_settings.live2d.bodyMovementIdleIntensity);
+    $('#live2d_body_movement_idle_intensity_value').text(extension_settings.live2d.bodyMovementIdleIntensity.toFixed(2));
+    $('#live2d_body_movement_talking_intensity').val(extension_settings.live2d.bodyMovementTalkingIntensity);
+    $('#live2d_body_movement_talking_intensity_value').text(extension_settings.live2d.bodyMovementTalkingIntensity.toFixed(2));
+    $('#live2d_body_movement_impulse_chance').val(extension_settings.live2d.bodyMovementImpulseChance);
+    $('#live2d_body_movement_impulse_chance_value').text(extension_settings.live2d.bodyMovementImpulseChance.toFixed(1));
+    $('#live2d_body_movement_smoothness').val(extension_settings.live2d.bodyMovementSmoothness);
+    $('#live2d_body_movement_smoothness_value').text(extension_settings.live2d.bodyMovementSmoothness.toFixed(2));
 }
 
 //#############################//
@@ -439,6 +479,13 @@ jQuery(async () => {
     $('#live2d_mouth_linked_param_id_3').on('input', onMouthLinkedParam3Change);
     $('#live2d_mouth_linked_min_3').on('input', onMouthLinkedParam3Change);
     $('#live2d_mouth_linked_max_3').on('input', onMouthLinkedParam3Change);
+    
+    // Body movement system event handlers
+    $('#live2d_body_movement_enabled').on('click', onBodyMovementEnabledClick);
+    $('#live2d_body_movement_idle_intensity').on('input', onBodyMovementIdleIntensityChange);
+    $('#live2d_body_movement_talking_intensity').on('input', onBodyMovementTalkingIntensityChange);
+    $('#live2d_body_movement_impulse_chance').on('input', onBodyMovementImpulseChanceChange);
+    $('#live2d_body_movement_smoothness').on('input', onBodyMovementSmoothnessChange);
 
     // Module worker
     const wrapper = new ModuleWorkerWrapper(moduleWorker);

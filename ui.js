@@ -76,6 +76,11 @@ export {
     onMouthLinkedParam1Change,
     onMouthLinkedParam2Change,
     onMouthLinkedParam3Change,
+    onBodyMovementEnabledClick,
+    onBodyMovementIdleIntensityChange,
+    onBodyMovementTalkingIntensityChange,
+    onBodyMovementImpulseChanceChange,
+    onBodyMovementSmoothnessChange,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -1155,4 +1160,39 @@ async function onMouthLinkedParam3Change() {
     await updateMouthLinkedSettings(2, paramId, minValue, maxValue); // Index 2 для третьего параметра
     
     console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 3 for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
+}
+
+// Body movement system event handlers
+async function onBodyMovementEnabledClick() {
+    extension_settings.live2d.bodyMovementEnabled = $('#live2d_body_movement_enabled').is(':checked');
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement enabled:', extension_settings.live2d.bodyMovementEnabled);
+}
+
+async function onBodyMovementIdleIntensityChange() {
+    extension_settings.live2d.bodyMovementIdleIntensity = parseFloat($('#live2d_body_movement_idle_intensity').val());
+    $('#live2d_body_movement_idle_intensity_value').text(extension_settings.live2d.bodyMovementIdleIntensity.toFixed(2));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement idle intensity:', extension_settings.live2d.bodyMovementIdleIntensity);
+}
+
+async function onBodyMovementTalkingIntensityChange() {
+    extension_settings.live2d.bodyMovementTalkingIntensity = parseFloat($('#live2d_body_movement_talking_intensity').val());
+    $('#live2d_body_movement_talking_intensity_value').text(extension_settings.live2d.bodyMovementTalkingIntensity.toFixed(2));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement talking intensity:', extension_settings.live2d.bodyMovementTalkingIntensity);
+}
+
+async function onBodyMovementImpulseChanceChange() {
+    extension_settings.live2d.bodyMovementImpulseChance = parseFloat($('#live2d_body_movement_impulse_chance').val());
+    $('#live2d_body_movement_impulse_chance_value').text(extension_settings.live2d.bodyMovementImpulseChance.toFixed(1));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement impulse chance:', extension_settings.live2d.bodyMovementImpulseChance);
+}
+
+async function onBodyMovementSmoothnessChange() {
+    extension_settings.live2d.bodyMovementSmoothness = parseFloat($('#live2d_body_movement_smoothness').val());
+    $('#live2d_body_movement_smoothness_value').text(extension_settings.live2d.bodyMovementSmoothness.toFixed(2));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement smoothness:', extension_settings.live2d.bodyMovementSmoothness);
 }

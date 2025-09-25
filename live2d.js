@@ -14,6 +14,13 @@ import {
     ID_PARAM_PATCH,
 } from './constants.js';
 
+import {
+    startBodyMovement,
+    stopBodyMovement,
+    restartBodyMovement,
+    notifyMouthActivity
+} from './bodyMovement.js';
+
 export {
     loadLive2d,
     updateExpression,
@@ -358,6 +365,9 @@ async function loadLive2d(visible = true) {
         // Start auto animations
         startAutoAnimations(character);
         
+        // Start body movement system
+        startBodyMovement(character, model, model_path);
+        
         console.debug(DEBUG_PREFIX, 'Finished loading model:', model);
     }
     console.debug(DEBUG_PREFIX, 'Models:', models);
@@ -476,6 +486,12 @@ async function rescaleModel(character) {
 
 async function removeModel(character) {
     if (models[character] !== undefined) {
+        // Останавливаем автоматические анимации
+        await stopAutoAnimations(character);
+        
+        // Останавливаем систему движения тела
+        await stopBodyMovement(character);
+        
         models[character].destroy(true, true, true);
         delete models[character];
         console.debug(DEBUG_PREFIX,'Delete model from memory for', character);
@@ -585,6 +601,9 @@ async function playTalk(character, text) {
     }
 	
 	is_talking[character] = true;
+	// Уведомляем систему движения тела о начале разговора
+	notifyMouthActivity(character, true);
+	
 	let startTime = Date.now();
 	const duration = text.length * mouth_time_per_character;
 	let turns = 0;
@@ -613,32 +632,9 @@ async function playTalk(character, text) {
         mouth_y = Math.sin((Date.now() - startTime));
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, mouth_y);
         
-        // Управляем дополнительными параметрами, если они настроены для данного персонажа и модели
-        const characterSettings = extension_settings.live2d.characterModelsSettings[character]?.[model_path];
-        if (characterSettings?.mouth_linked_params) {
-            const mouthLinkedParams = [
-                characterSettings.mouth_linked_params.param1,
-                characterSettings.mouth_linked_params.param2,
-                characterSettings.mouth_linked_params.param3
-            ];
-            
-            for (let i = 0; i < mouthLinkedParams.length; i++) {
-                const param = mouthLinkedParams[i];
-                if (param.paramId && param.paramId !== '') {
-                    try {
-                        // Преобразуем mouth_y (от -1 до 1) в диапазон min-max
-                        // mouth_y = -1 (рот закрыт) -> minValue
-                        // mouth_y = 1 (рот открыт) -> maxValue
-                        const normalizedValue = (mouth_y + 1) / 2; // Преобразуем от (-1,1) к (0,1)
-                        const linkedValue = param.minValue + normalizedValue * (param.maxValue - param.minValue);
-                        
-                        model.internalModel.coreModel.setParameterValueById(param.paramId, linkedValue);
-                    } catch (error) {
-                        // Не логируем ошибку каждый кадр, чтобы не спамить консоль
-                    }
-                }
-            }
-        }
+        // Старая система прямой привязки параметров отключена
+        // Теперь движения тела управляются системой bodyMovement.js
+        // которая создаёт более естественные движения с шумом и инерцией
         
         await delay(100 / mouth_open_speed);
         turns += 1;
@@ -647,26 +643,8 @@ async function playTalk(character, text) {
     if (model?.internalModel?.coreModel !== undefined) {
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, -100); // close mouth
         
-        // Сбрасываем дополнительные параметры в минимальные значения (рот закрыт)
-        const characterSettings = extension_settings.live2d.characterModelsSettings[character]?.[model_path];
-        if (characterSettings?.mouth_linked_params) {
-            const mouthLinkedParams = [
-                characterSettings.mouth_linked_params.param1,
-                characterSettings.mouth_linked_params.param2,
-                characterSettings.mouth_linked_params.param3
-            ];
-            
-            for (let i = 0; i < mouthLinkedParams.length; i++) {
-                const param = mouthLinkedParams[i];
-                if (param.paramId && param.paramId !== '') {
-                    try {
-                        model.internalModel.coreModel.setParameterValueById(param.paramId, param.minValue);
-                    } catch (error) {
-                        // Игнорируем ошибку
-                    }
-                }
-            }
-        }
+        // Уведомляем систему движения тела о завершении разговора
+        notifyMouthActivity(character, false);
     }
     is_talking[character] = false;
 }
