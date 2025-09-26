@@ -61,8 +61,6 @@ export {
     onAutoEyeAmplitudePeripheralChange,
     onAutoEyeFixationMinChange,
     onAutoEyeFixationMaxChange,
-    onAutoBreathAmplitudeChange,
-    onAutoBreathSpeedChange,
     onMicrosaccadesEnabledClick,
     onMicrosaccadeAmplitudeChange,
     onMicrosaccadeFrequencyChange,
@@ -943,17 +941,6 @@ async function onAutoEyeFixationMaxChange() {
 }
 
 
-async function onAutoBreathAmplitudeChange() {
-    extension_settings.live2d.autoBreathAmplitude = Number($('#live2d_auto_breath_amplitude').val());
-    $('#live2d_auto_breath_amplitude_value').text(extension_settings.live2d.autoBreathAmplitude);
-    saveSettingsDebounced();
-}
-
-async function onAutoBreathSpeedChange() {
-    extension_settings.live2d.autoBreathSpeed = Number($('#live2d_auto_breath_speed').val());
-    $('#live2d_auto_breath_speed_value').text(extension_settings.live2d.autoBreathSpeed);
-    saveSettingsDebounced();
-}
 
 // Microsaccades event handlers
 async function onMicrosaccadesEnabledClick() {
