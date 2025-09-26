@@ -79,6 +79,7 @@ export {
     onBodyMovementTalkingIntensityChange,
     onBodyMovementImpulseChanceChange,
     onBodyMovementSmoothnessChange,
+    onBodyMovementImpulseInertiaChange,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -1182,4 +1183,11 @@ async function onBodyMovementSmoothnessChange() {
     $('#live2d_body_movement_smoothness_value').text(extension_settings.live2d.bodyMovementSmoothness.toFixed(2));
     saveSettingsDebounced();
     console.debug(DEBUG_PREFIX, 'Body movement smoothness:', extension_settings.live2d.bodyMovementSmoothness);
+}
+
+async function onBodyMovementImpulseInertiaChange() {
+    extension_settings.live2d.bodyMovementImpulseInertia = parseFloat($('#live2d_body_movement_impulse_inertia').val());
+    $('#live2d_body_movement_impulse_inertia_value').text(extension_settings.live2d.bodyMovementImpulseInertia.toFixed(2));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement impulse inertia:', extension_settings.live2d.bodyMovementImpulseInertia);
 }
