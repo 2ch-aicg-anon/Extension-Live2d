@@ -106,6 +106,7 @@ import {
     onBodyMovementImpulseChanceChange,
     onBodyMovementSmoothnessChange,
     onBodyMovementImpulseInertiaChange,
+    onRestartBodyMovementClick,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -478,6 +479,7 @@ jQuery(async () => {
     $('#live2d_body_movement_impulse_chance').on('input', onBodyMovementImpulseChanceChange);
     $('#live2d_body_movement_smoothness').on('input', onBodyMovementSmoothnessChange);
     $('#live2d_body_movement_impulse_inertia').on('input', onBodyMovementImpulseInertiaChange);
+    $('#live2d_restart_body_movement_button').on('click', onRestartBodyMovementClick);
 
     // Module worker
     const wrapper = new ModuleWorkerWrapper(moduleWorker);

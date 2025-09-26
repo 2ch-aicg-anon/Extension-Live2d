@@ -35,6 +35,7 @@ export {
     setParameter,
     setVisible,
     charactersWithModelLoaded,
+    getModel,
     forceLoopAnimation,
     startAutoAnimations,
     stopAutoAnimations,
@@ -43,6 +44,9 @@ export {
     setBodyParameter,
     logModelParameters,
     updateMouthLinkedSettings,
+    startBodyMovement,
+    stopBodyMovement,
+    restartBodyMovement,
 };
 
 let models = {};
@@ -680,6 +684,10 @@ function setVisible() {
 
 function charactersWithModelLoaded() {
     return Object.keys(models);
+}
+
+function getModel(character) {
+    return models[character];
 }
 
 function forceLoopAnimation() {

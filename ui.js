@@ -80,6 +80,7 @@ export {
     onBodyMovementImpulseChanceChange,
     onBodyMovementSmoothnessChange,
     onBodyMovementImpulseInertiaChange,
+    onRestartBodyMovementClick,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -1190,4 +1191,22 @@ async function onBodyMovementImpulseInertiaChange() {
     $('#live2d_body_movement_impulse_inertia_value').text(extension_settings.live2d.bodyMovementImpulseInertia.toFixed(2));
     saveSettingsDebounced();
     console.debug(DEBUG_PREFIX, 'Body movement impulse inertia:', extension_settings.live2d.bodyMovementImpulseInertia);
+}
+
+async function onRestartBodyMovementClick() {
+    const { restartBodyMovement, charactersWithModelLoaded, getModel } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    console.debug(DEBUG_PREFIX, 'Restarting body movement for all loaded characters:', loadedCharacters);
+    
+    for (const character of loadedCharacters) {
+        const model_path = extension_settings.live2d.characterModelMapping[character];
+        const model = getModel(character);
+        
+        if (model_path && model) {
+            await restartBodyMovement(character, model, model_path);
+        }
+    }
+    
+    console.debug(DEBUG_PREFIX, 'All body movements restarted with current settings');
 }
