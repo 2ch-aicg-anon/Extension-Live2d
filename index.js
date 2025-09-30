@@ -104,7 +104,11 @@ import {
     onBodyMovementIdleIntensityChange,
     onBodyMovementTalkingIntensityChange,
     onBodyMovementImpulseChanceChange,
-    onBodyMovementSmoothnessChange,
+    onBodyMovementTalkingImpulseFrequencyChange,
+    onBodyMovementTalkingImpulseMultiplierChange,
+    onBodyMovementTalkingSpeedBoostChange,
+    onBodyMovementDampingChange,
+    onBodyMovementSpringStiffnessChange,
     onBodyMovementImpulseInertiaChange,
     onRestartBodyMovementClick,
     updateCharactersModels,
@@ -177,7 +181,11 @@ const defaultSettings = {
     bodyMovementIdleIntensity: 0.3,
     bodyMovementTalkingIntensity: 0.6,
     bodyMovementImpulseChance: 2,
-    bodyMovementSmoothness: 0.85,
+    bodyMovementTalkingImpulseFrequency: 15,
+    bodyMovementTalkingImpulseMultiplier: 2.0,
+    bodyMovementTalkingSpeedBoost: 2.0,
+    bodyMovementDamping: 0.85,
+    bodyMovementSpringStiffness: 0.15,
     bodyMovementImpulseInertia: 0.92,
 };
 
@@ -253,8 +261,25 @@ function loadSettings() {
     if (extension_settings.live2d.bodyMovementImpulseChance === undefined) {
         extension_settings.live2d.bodyMovementImpulseChance = defaultSettings.bodyMovementImpulseChance;
     }
-    if (extension_settings.live2d.bodyMovementSmoothness === undefined) {
-        extension_settings.live2d.bodyMovementSmoothness = defaultSettings.bodyMovementSmoothness;
+    if (extension_settings.live2d.bodyMovementTalkingImpulseFrequency === undefined) {
+        extension_settings.live2d.bodyMovementTalkingImpulseFrequency = defaultSettings.bodyMovementTalkingImpulseFrequency;
+    }
+    if (extension_settings.live2d.bodyMovementTalkingImpulseMultiplier === undefined) {
+        extension_settings.live2d.bodyMovementTalkingImpulseMultiplier = defaultSettings.bodyMovementTalkingImpulseMultiplier;
+    }
+    if (extension_settings.live2d.bodyMovementTalkingSpeedBoost === undefined) {
+        extension_settings.live2d.bodyMovementTalkingSpeedBoost = defaultSettings.bodyMovementTalkingSpeedBoost;
+    }
+    if (extension_settings.live2d.bodyMovementDamping === undefined) {
+        // Миграция старой настройки bodyMovementSmoothness на bodyMovementDamping
+        if (extension_settings.live2d.bodyMovementSmoothness !== undefined) {
+            extension_settings.live2d.bodyMovementDamping = extension_settings.live2d.bodyMovementSmoothness;
+        } else {
+            extension_settings.live2d.bodyMovementDamping = defaultSettings.bodyMovementDamping;
+        }
+    }
+    if (extension_settings.live2d.bodyMovementSpringStiffness === undefined) {
+        extension_settings.live2d.bodyMovementSpringStiffness = defaultSettings.bodyMovementSpringStiffness;
     }
     if (extension_settings.live2d.bodyMovementImpulseInertia === undefined) {
         extension_settings.live2d.bodyMovementImpulseInertia = defaultSettings.bodyMovementImpulseInertia;
@@ -302,8 +327,16 @@ function loadSettings() {
     $('#live2d_body_movement_talking_intensity_value').text(extension_settings.live2d.bodyMovementTalkingIntensity.toFixed(2));
     $('#live2d_body_movement_impulse_chance').val(extension_settings.live2d.bodyMovementImpulseChance);
     $('#live2d_body_movement_impulse_chance_value').text(extension_settings.live2d.bodyMovementImpulseChance.toFixed(1));
-    $('#live2d_body_movement_smoothness').val(extension_settings.live2d.bodyMovementSmoothness);
-    $('#live2d_body_movement_smoothness_value').text(extension_settings.live2d.bodyMovementSmoothness.toFixed(2));
+    $('#live2d_body_movement_talking_impulse_frequency').val(extension_settings.live2d.bodyMovementTalkingImpulseFrequency);
+    $('#live2d_body_movement_talking_impulse_frequency_value').text(extension_settings.live2d.bodyMovementTalkingImpulseFrequency.toFixed(0));
+    $('#live2d_body_movement_talking_impulse_multiplier').val(extension_settings.live2d.bodyMovementTalkingImpulseMultiplier);
+    $('#live2d_body_movement_talking_impulse_multiplier_value').text(extension_settings.live2d.bodyMovementTalkingImpulseMultiplier.toFixed(1));
+    $('#live2d_body_movement_talking_speed_boost').val(extension_settings.live2d.bodyMovementTalkingSpeedBoost);
+    $('#live2d_body_movement_talking_speed_boost_value').text(extension_settings.live2d.bodyMovementTalkingSpeedBoost.toFixed(1));
+    $('#live2d_body_movement_damping').val(extension_settings.live2d.bodyMovementDamping);
+    $('#live2d_body_movement_damping_value').text(extension_settings.live2d.bodyMovementDamping.toFixed(2));
+    $('#live2d_body_movement_spring_stiffness').val(extension_settings.live2d.bodyMovementSpringStiffness);
+    $('#live2d_body_movement_spring_stiffness_value').text(extension_settings.live2d.bodyMovementSpringStiffness.toFixed(2));
     $('#live2d_body_movement_impulse_inertia').val(extension_settings.live2d.bodyMovementImpulseInertia);
     $('#live2d_body_movement_impulse_inertia_value').text(extension_settings.live2d.bodyMovementImpulseInertia.toFixed(2));
 }
@@ -477,7 +510,11 @@ jQuery(async () => {
     $('#live2d_body_movement_idle_intensity').on('input', onBodyMovementIdleIntensityChange);
     $('#live2d_body_movement_talking_intensity').on('input', onBodyMovementTalkingIntensityChange);
     $('#live2d_body_movement_impulse_chance').on('input', onBodyMovementImpulseChanceChange);
-    $('#live2d_body_movement_smoothness').on('input', onBodyMovementSmoothnessChange);
+    $('#live2d_body_movement_talking_impulse_frequency').on('input', onBodyMovementTalkingImpulseFrequencyChange);
+    $('#live2d_body_movement_talking_impulse_multiplier').on('input', onBodyMovementTalkingImpulseMultiplierChange);
+    $('#live2d_body_movement_talking_speed_boost').on('input', onBodyMovementTalkingSpeedBoostChange);
+    $('#live2d_body_movement_damping').on('input', onBodyMovementDampingChange);
+    $('#live2d_body_movement_spring_stiffness').on('input', onBodyMovementSpringStiffnessChange);
     $('#live2d_body_movement_impulse_inertia').on('input', onBodyMovementImpulseInertiaChange);
     $('#live2d_restart_body_movement_button').on('click', onRestartBodyMovementClick);
 

@@ -19,7 +19,6 @@ const bodyMovementStates = {};
 // Константы системы
 const IDLE_THRESHOLD_MS = 500; // Время без движения рта для перехода в idle
 const UPDATE_INTERVAL_MS = 50; // Базовый интервал обновления (20 FPS)
-const MICRO_UPDATE_INTERVAL_MS = 100; // Интервал для микродвижений (10 FPS)
 
 // Структура для хранения состояния движения персонажа
 class BodyMovementState {
@@ -87,24 +86,27 @@ function generateImpulse(state, paramKey) {
     const now = Date.now();
     const timeSinceLastImpulse = now - state.lastImpulseTime[paramKey];
     
-    // Получаем настройки импульсов из UI
-    const impulseFrequency = extension_settings.live2d.bodyMovementImpulseChance || 2;
-    const impulseInertia = extension_settings.live2d.bodyMovementImpulseInertia || 0.92;
-    const baseChance = impulseFrequency / 100; // Преобразуем проценты в вероятность
+    // Получаем настройки из extension_settings
+    const impulseFrequency = extension_settings.live2d.bodyMovementImpulseChance || 2; // Базовая частота импульсов (0-10%)
+    const impulseInertia = extension_settings.live2d.bodyMovementImpulseInertia || 0.92; // Скорость затухания импульсов (0.80-0.98)
+    const talkingImpulseMultiplier = extension_settings.live2d.bodyMovementTalkingImpulseMultiplier || 2.0; // Множитель силы импульсов во время разговора
+    const talkingImpulseFrequency = extension_settings.live2d.bodyMovementTalkingImpulseFrequency || 15; // Частота импульсов во время разговора (0-30%)
+    
+    const baseChance = impulseFrequency / 100;
     
     // Настройки импульсов в зависимости от состояния
     const impulseConfig = state.currentState === 'talking' ? {
-        chance: baseChance, // Базовый шанс для talking
-        minInterval: 1000, // Минимум 1 секунда между импульсами
-        amplitudeMin: 0.3,
-        amplitudeMax: 0.8,
-        decayRate: impulseInertia // Используем настройку инерции
+        chance: talkingImpulseFrequency / 100, // Отдельная частота для talking
+        minInterval: 300, // Минимум 300мс между импульсами (более частые импульсы для СДВГ-эффекта)
+        amplitudeMin: 0.4 * talkingImpulseMultiplier, // Увеличенная амплитуда для talking
+        amplitudeMax: 0.9 * talkingImpulseMultiplier,
+        decayRate: impulseInertia
     } : {
-        chance: baseChance * 0.25, // В idle импульсы реже
+        chance: baseChance * 0.25, // В idle импульсы редкие
         minInterval: 3000, // Минимум 3 секунды между импульсами
         amplitudeMin: 0.1,
         amplitudeMax: 0.3,
-        decayRate: Math.min(impulseInertia + 0.03, 0.98) // В idle немного больше инерции, но не более 0.98
+        decayRate: Math.min(impulseInertia + 0.03, 0.98)
     };
     
     // Проверяем, можем ли генерировать новый импульс
@@ -149,10 +151,12 @@ async function updateBodyMovement(character, model, settings) {
     
     const time = Date.now() / 1000;
     
-    // Получаем настройки интенсивности из UI
-    const idleIntensity = extension_settings.live2d.bodyMovementIdleIntensity || 0.3;
-    const talkingIntensity = extension_settings.live2d.bodyMovementTalkingIntensity || 0.6;
-    const smoothness = extension_settings.live2d.bodyMovementSmoothness || 0.85;
+    // Получаем настройки из extension_settings
+    const idleIntensity = extension_settings.live2d.bodyMovementIdleIntensity || 0.3; // Интенсивность шумов в idle (0-1)
+    const talkingIntensity = extension_settings.live2d.bodyMovementTalkingIntensity || 0.6; // Интенсивность шумов в talking (0-1)
+    const damping = extension_settings.live2d.bodyMovementDamping || 0.85; // Демпфирование колебаний - чем выше, тем меньше "резинового" отскока (0.5-0.99)
+    const springStiffness = extension_settings.live2d.bodyMovementSpringStiffness || 0.15; // Жёсткость пружины - чем выше, тем быстрее реакция (0.05-0.30)
+    const talkingSpeedBoost = extension_settings.live2d.bodyMovementTalkingSpeedBoost || 2.0; // Ускорение шумов во время разговора (1.0-4.0)
     
     // Определяем веса для разных состояний
     const intensity = state.currentState === 'talking' ? talkingIntensity : idleIntensity;
@@ -161,30 +165,34 @@ async function updateBodyMovement(character, model, settings) {
         slowNoise: 0.3 * intensity,
         mediumNoise: 0.5 * intensity,
         fastNoise: 0.2 * intensity,
-        impulse: 1.0,
-        damping: smoothness, // Используем настройку плавности
-        springStiffness: 0.15 * (2 - smoothness) // Чем плавнее, тем меньше жёсткость
+        impulse: 1.0, // Импульсы всегда применяются в полную силу (их амплитуда контролируется в generateImpulse)
+        damping: damping,
+        springStiffness: springStiffness,
+        noiseSpeedMultiplier: talkingSpeedBoost // Ускорение шумов для более "дёрганых" движений
     } : {
         slowNoise: 0.6 * intensity,
         mediumNoise: 0.3 * intensity,
         fastNoise: 0.1 * intensity,
-        impulse: 0.5,
-        damping: 0.85 + (smoothness - 0.85) * 0.5, // Для idle более плавное
-        springStiffness: 0.08 * (2 - smoothness)
+        impulse: 0.5, // В idle импульсы слабее
+        damping: Math.min(damping + 0.05, 0.95), // В idle немного больше демпфирования
+        springStiffness: springStiffness * 0.5, // В idle более мягкая пружина
+        noiseSpeedMultiplier: 1.0
     };
     
-    // Обновляем фазы шумов
-    state.noisePhases.slow.param1 += 0.01;
-    state.noisePhases.slow.param2 += 0.011;
-    state.noisePhases.slow.param3 += 0.009;
+    // Обновляем фазы шумов (ускоряем при разговоре для СДВГ-эффекта)
+    const speedMult = stateWeights.noiseSpeedMultiplier;
     
-    state.noisePhases.medium.param1 += 0.05;
-    state.noisePhases.medium.param2 += 0.048;
-    state.noisePhases.medium.param3 += 0.052;
+    state.noisePhases.slow.param1 += 0.01 * speedMult;
+    state.noisePhases.slow.param2 += 0.011 * speedMult;
+    state.noisePhases.slow.param3 += 0.009 * speedMult;
     
-    state.noisePhases.fast.param1 += 0.2;
-    state.noisePhases.fast.param2 += 0.18;
-    state.noisePhases.fast.param3 += 0.22;
+    state.noisePhases.medium.param1 += 0.05 * speedMult;
+    state.noisePhases.medium.param2 += 0.048 * speedMult;
+    state.noisePhases.medium.param3 += 0.052 * speedMult;
+    
+    state.noisePhases.fast.param1 += 0.2 * speedMult;
+    state.noisePhases.fast.param2 += 0.18 * speedMult;
+    state.noisePhases.fast.param3 += 0.22 * speedMult;
     
     // Обрабатываем каждый параметр
     const params = ['param1', 'param2', 'param3'];

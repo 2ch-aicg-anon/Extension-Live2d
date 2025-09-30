@@ -659,39 +659,91 @@
                     <div class="live2d-parameter">
                         <div class="live2d-parameter-title">
                             <label for="live2d_body_movement_impulse_chance">
-                                Impulse Frequency <br/>(<span id="live2d_body_movement_impulse_chance_value"></span>%)
+                                Idle Impulse Frequency <br/>(<span id="live2d_body_movement_impulse_chance_value"></span>%)
                             </label>
                         </div>
                         <div class="live2d-slider-div">
                             <input id="live2d_body_movement_impulse_chance" type="range" min="0" max="10" step="0.5" value="2" />
                             <small>
-                                Chance of sudden movements/gestures (0 = never, 10 = very frequent)
+                                Базовая частота резких движений в покое (0 = никогда, 10 = очень часто)
                             </small>
                         </div>
                     </div>
                     <div class="live2d-parameter">
                         <div class="live2d-parameter-title">
-                            <label for="live2d_body_movement_smoothness">
-                                Movement Smoothness <br/>(<span id="live2d_body_movement_smoothness_value"></span>)
+                            <label for="live2d_body_movement_talking_impulse_frequency">
+                                Talking Impulse Frequency <br/>(<span id="live2d_body_movement_talking_impulse_frequency_value"></span>%)
                             </label>
                         </div>
                         <div class="live2d-slider-div">
-                            <input id="live2d_body_movement_smoothness" type="range" min="0.5" max="0.99" step="0.01" value="0.85" />
+                            <input id="live2d_body_movement_talking_impulse_frequency" type="range" min="0" max="30" step="1" value="15" />
                             <small>
-                                How smooth movements are (0.5 = jerky, 0.99 = very smooth)
+                                Частота резких движений при разговоре (0-30%, больше = активнее)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_body_movement_talking_impulse_multiplier">
+                                Talking Impulse Power <br/>(<span id="live2d_body_movement_talking_impulse_multiplier_value"></span>x)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_body_movement_talking_impulse_multiplier" type="range" min="1.0" max="3.0" step="0.1" value="2.0" />
+                            <small>
+                                Насколько сильнее импульсы при разговоре (1.0 = как в покое, 3.0 = в 3 раза сильнее)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_body_movement_talking_speed_boost">
+                                Talking Speed Boost <br/>(<span id="live2d_body_movement_talking_speed_boost_value"></span>x)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_body_movement_talking_speed_boost" type="range" min="1.0" max="4.0" step="0.1" value="2.0" />
+                            <small>
+                                Ускорение движений при разговоре (1.0 = без ускорения, 4.0 = очень быстро и дёргано)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_body_movement_damping">
+                                Oscillation Damping <br/>(<span id="live2d_body_movement_damping_value"></span>)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_body_movement_damping" type="range" min="0.5" max="0.99" step="0.01" value="0.85" />
+                            <small>
+                                Демпфирование колебаний (0.5 = мало отскока, 0.99 = сильный отскок и раскачка)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_body_movement_spring_stiffness">
+                                Spring Responsiveness <br/>(<span id="live2d_body_movement_spring_stiffness_value"></span>)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_body_movement_spring_stiffness" type="range" min="0.05" max="0.30" step="0.01" value="0.15" />
+                            <small>
+                                Скорость реакции на изменения (0.05 = медленно и плавно, 0.30 = быстро и резко)
                             </small>
                         </div>
                     </div>
                     <div class="live2d-parameter">
                         <div class="live2d-parameter-title">
                             <label for="live2d_body_movement_impulse_inertia">
-                                Impulse Inertia <br/>(<span id="live2d_body_movement_impulse_inertia_value"></span>)
+                                Impulse Decay <br/>(<span id="live2d_body_movement_impulse_inertia_value"></span>)
                             </label>
                         </div>
                         <div class="live2d-slider-div">
                             <input id="live2d_body_movement_impulse_inertia" type="range" min="0.80" max="0.98" step="0.01" value="0.92" />
                             <small>
-                                How quickly impulses fade out (0.80 = fast decay, 0.98 = slow decay/more inertia)
+                                Скорость затухания импульсов (0.80 = быстрое затухание, 0.98 = долгое затухание)
                             </small>
                         </div>
                     </div>

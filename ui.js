@@ -78,7 +78,11 @@ export {
     onBodyMovementIdleIntensityChange,
     onBodyMovementTalkingIntensityChange,
     onBodyMovementImpulseChanceChange,
-    onBodyMovementSmoothnessChange,
+    onBodyMovementTalkingImpulseFrequencyChange,
+    onBodyMovementTalkingImpulseMultiplierChange,
+    onBodyMovementTalkingSpeedBoostChange,
+    onBodyMovementDampingChange,
+    onBodyMovementSpringStiffnessChange,
     onBodyMovementImpulseInertiaChange,
     onRestartBodyMovementClick,
     updateCharactersModels,
@@ -1179,11 +1183,39 @@ async function onBodyMovementImpulseChanceChange() {
     console.debug(DEBUG_PREFIX, 'Body movement impulse chance:', extension_settings.live2d.bodyMovementImpulseChance);
 }
 
-async function onBodyMovementSmoothnessChange() {
-    extension_settings.live2d.bodyMovementSmoothness = parseFloat($('#live2d_body_movement_smoothness').val());
-    $('#live2d_body_movement_smoothness_value').text(extension_settings.live2d.bodyMovementSmoothness.toFixed(2));
+async function onBodyMovementTalkingImpulseFrequencyChange() {
+    extension_settings.live2d.bodyMovementTalkingImpulseFrequency = parseFloat($('#live2d_body_movement_talking_impulse_frequency').val());
+    $('#live2d_body_movement_talking_impulse_frequency_value').text(extension_settings.live2d.bodyMovementTalkingImpulseFrequency.toFixed(0));
     saveSettingsDebounced();
-    console.debug(DEBUG_PREFIX, 'Body movement smoothness:', extension_settings.live2d.bodyMovementSmoothness);
+    console.debug(DEBUG_PREFIX, 'Body movement talking impulse frequency:', extension_settings.live2d.bodyMovementTalkingImpulseFrequency);
+}
+
+async function onBodyMovementTalkingImpulseMultiplierChange() {
+    extension_settings.live2d.bodyMovementTalkingImpulseMultiplier = parseFloat($('#live2d_body_movement_talking_impulse_multiplier').val());
+    $('#live2d_body_movement_talking_impulse_multiplier_value').text(extension_settings.live2d.bodyMovementTalkingImpulseMultiplier.toFixed(1));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement talking impulse multiplier:', extension_settings.live2d.bodyMovementTalkingImpulseMultiplier);
+}
+
+async function onBodyMovementTalkingSpeedBoostChange() {
+    extension_settings.live2d.bodyMovementTalkingSpeedBoost = parseFloat($('#live2d_body_movement_talking_speed_boost').val());
+    $('#live2d_body_movement_talking_speed_boost_value').text(extension_settings.live2d.bodyMovementTalkingSpeedBoost.toFixed(1));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement talking speed boost:', extension_settings.live2d.bodyMovementTalkingSpeedBoost);
+}
+
+async function onBodyMovementDampingChange() {
+    extension_settings.live2d.bodyMovementDamping = parseFloat($('#live2d_body_movement_damping').val());
+    $('#live2d_body_movement_damping_value').text(extension_settings.live2d.bodyMovementDamping.toFixed(2));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement damping:', extension_settings.live2d.bodyMovementDamping);
+}
+
+async function onBodyMovementSpringStiffnessChange() {
+    extension_settings.live2d.bodyMovementSpringStiffness = parseFloat($('#live2d_body_movement_spring_stiffness').val());
+    $('#live2d_body_movement_spring_stiffness_value').text(extension_settings.live2d.bodyMovementSpringStiffness.toFixed(2));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Body movement spring stiffness:', extension_settings.live2d.bodyMovementSpringStiffness);
 }
 
 async function onBodyMovementImpulseInertiaChange() {
