@@ -702,6 +702,51 @@ function forceLoopAnimation() {
         }
     }
 }
+async function autoBreathing(character) {
+    const model = models[character];
+    if (!model) return;
+    
+    // Проверяем, включены ли автоматические анимации
+    if (!extension_settings.live2d.autoAnimationsEnabled) return;
+    
+    // Отмечаем, что анимация дыхания запущена
+    if (!autoAnimationsRunning[character]) {
+        autoAnimationsRunning[character] = {};
+    }
+    autoAnimationsRunning[character].breathing = true;
+    
+    const model_path = extension_settings.live2d.characterModelMapping[character];
+    const BREATH_PARAMETER_ID = extension_settings.live2d.characterModelsSettings[character][model_path]['cursor_param']['idParamBreath'] || "PARAM_BREATH";
+    
+    // Фиксируем параметры на момент запуска (не читаем в реальном времени)
+    const BREATH_SPEED = extension_settings.live2d.autoBreathSpeed || 0.5;
+    const BREATH_AMOUNT = extension_settings.live2d.autoBreathAmplitude || 0.5;
+    
+    while (true) {
+        // Проверяем, что модель всё ещё существует и анимации включены
+        if (model?.internalModel?.coreModel === undefined || !extension_settings.live2d.autoAnimationsEnabled) {
+            console.debug(DEBUG_PREFIX, 'Model destroyed or animations disabled, stopping breathing animation');
+            autoAnimationsRunning[character].breathing = false;
+            break;
+        }
+        
+        const time = Date.now() / 1000; // Текущее время в секундах
+        const value = BREATH_AMOUNT * Math.sin(BREATH_SPEED * time);
+        
+        
+        try {
+            model.internalModel.coreModel.addParameterValueById(BREATH_PARAMETER_ID, value);
+        } catch (error) {
+            console.debug(DEBUG_PREFIX, 'Error animating breath parameter:', error);
+            autoAnimationsRunning[character].breathing = false;
+            break;
+        }
+        
+        await delay(50); // 20 FPS обновление
+    }
+    
+    autoAnimationsRunning[character].breathing = false;
+}
 async function autoMicrosaccades(character) {
     const model = models[character];
     if (!model) return;
@@ -952,6 +997,7 @@ async function stopAutoAnimations(character) {
     console.debug(DEBUG_PREFIX, 'Stopping auto animations for', character);
     
     if (autoAnimationsRunning[character]) {
+        autoAnimationsRunning[character].breathing = false;
         autoAnimationsRunning[character].eyeMovement = false;
         autoAnimationsRunning[character].microsaccades = false;
     }
@@ -985,6 +1031,10 @@ async function startAutoAnimations(character) {
         autoAnimationsRunning[character] = {};
     }
     
+    // Запускаем дыхание, если ещё не запущено
+    if (!autoAnimationsRunning[character].breathing) {
+        autoBreathing(character);
+    }
     
     // Запускаем движение глаз, если ещё не запущено
     if (!autoAnimationsRunning[character].eyeMovement) {

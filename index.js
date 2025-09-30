@@ -87,6 +87,8 @@ import {
     onAutoEyeAmplitudePeripheralChange,
     onAutoEyeFixationMinChange,
     onAutoEyeFixationMaxChange,
+    onAutoBreathAmplitudeChange,
+    onAutoBreathSpeedChange,
     onMicrosaccadesEnabledClick,
     onMicrosaccadeAmplitudeChange,
     onMicrosaccadeFrequencyChange,
@@ -150,6 +152,8 @@ const defaultSettings = {
     autoEyeAmplitudePeripheral: 0.2,
     autoEyeFixationMin: 200,
     autoEyeFixationMax: 2000,
+    autoBreathAmplitude: 0.024,
+    autoBreathSpeed: 0.5,
     
     // Microsaccades settings
     microsaccadesEnabled: true,
@@ -210,6 +214,12 @@ function loadSettings() {
     }
     if (extension_settings.live2d.autoEyeFixationMax === undefined) {
         extension_settings.live2d.autoEyeFixationMax = defaultSettings.autoEyeFixationMax;
+    }
+    if (extension_settings.live2d.autoBreathAmplitude === undefined) {
+        extension_settings.live2d.autoBreathAmplitude = defaultSettings.autoBreathAmplitude;
+    }
+    if (extension_settings.live2d.autoBreathSpeed === undefined) {
+        extension_settings.live2d.autoBreathSpeed = defaultSettings.autoBreathSpeed;
     }
     
     // Ensure microsaccades settings exist with defaults
@@ -274,6 +284,10 @@ function loadSettings() {
     $('#live2d_auto_eye_fixation_min_value').text(extension_settings.live2d.autoEyeFixationMin);
     $('#live2d_auto_eye_fixation_max').val(extension_settings.live2d.autoEyeFixationMax);
     $('#live2d_auto_eye_fixation_max_value').text(extension_settings.live2d.autoEyeFixationMax);
+    $('#live2d_auto_breath_amplitude').val(extension_settings.live2d.autoBreathAmplitude);
+    $('#live2d_auto_breath_amplitude_value').text(extension_settings.live2d.autoBreathAmplitude);
+    $('#live2d_auto_breath_speed').val(extension_settings.live2d.autoBreathSpeed);
+    $('#live2d_auto_breath_speed_value').text(extension_settings.live2d.autoBreathSpeed);
     
     // Microsaccades settings
     $('#live2d_microsaccades_enabled').prop('checked', extension_settings.live2d.microsaccadesEnabled);
@@ -438,6 +452,8 @@ jQuery(async () => {
     $('#live2d_auto_eye_amplitude_peripheral').on('input', onAutoEyeAmplitudePeripheralChange);
     $('#live2d_auto_eye_fixation_min').on('input', onAutoEyeFixationMinChange);
     $('#live2d_auto_eye_fixation_max').on('input', onAutoEyeFixationMaxChange);
+    $('#live2d_auto_breath_amplitude').on('input', onAutoBreathAmplitudeChange);
+    $('#live2d_auto_breath_speed').on('input', onAutoBreathSpeedChange);
     
     // Microsaccades event handlers
     $('#live2d_microsaccades_enabled').on('click', onMicrosaccadesEnabledClick);
