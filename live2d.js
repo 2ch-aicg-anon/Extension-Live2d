@@ -614,27 +614,18 @@ async function playTalk(character, text) {
 	let mouth_y = 0;
 	
 	// TTS Binding система (@4eckme)
-	// Устанавливаем флаг и ждем сигнал от внешней TTS системы
 	window.live2d_tts_bind = false;
 	
-	// Ждем сигнал от TTS или таймаут (персонаж начинает открывать рот с задержкой)
-	const ttsWaitStartTime = Date.now();
-	const TTS_WAIT_TIMEOUT = 10000; // 5 секунд на ожидание TTS сигнала
-	while (window.live2d_tts_bind === false && (Date.now() - ttsWaitStartTime) < TTS_WAIT_TIMEOUT) {
-		await delay(20);
-	}
-	
-	// Определяем режим: если TTS ответил - используем TTS binding, иначе - обычный таймер
-	const useTTSBinding = window.live2d_tts_bind === true;
-	
-	if (useTTSBinding) {
-		console.debug(DEBUG_PREFIX, 'Using TTS binding mode for', character);
-	} else {
-		console.debug(DEBUG_PREFIX, 'Using timer-based mode for', character);
-	}
-	
 	// Основной цикл анимации рта
-	while (true) {
+	// ИСПРАВЛЕНО: убрали "|| true" чтобы цикл мог завершиться
+	while ((Date.now() - startTime) < duration) {
+		
+		// TTS Binding: ждем сигнал от внешней TTS системы
+		model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, -100);
+		while (window.live2d_tts_bind === false) {
+			await delay(20);
+		}
+		
 		if (abortTalking[character]) {
             console.debug(DEBUG_PREFIX,'Abort talking requested.');
             break;
@@ -645,18 +636,6 @@ async function playTalk(character, text) {
             console.debug(DEBUG_PREFIX,'Model destroyed during talking animation, abort');
             break;
         }
-
-		// TTS режим: выходим когда TTS сигнализирует об окончании (window.live2d_tts_bind становится false)
-		if (useTTSBinding && window.live2d_tts_bind === false) {
-			console.debug(DEBUG_PREFIX, 'TTS binding finished for', character);
-			break;
-		}
-		
-		// Обычный режим: выходим когда время истекло
-		if (!useTTSBinding && (Date.now() - startTime) >= duration) {
-			console.debug(DEBUG_PREFIX, 'Talk duration finished for', character);
-			break;
-		}
 
         mouth_y = Math.sin((Date.now() - startTime));
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, mouth_y);
