@@ -1304,9 +1304,6 @@ async function onLeftEyeParamChange() {
     const minValue = Number($('#live2d_left_eye_min').val());
     const maxValue = Number($('#live2d_left_eye_max').val());
     
-    console.debug(DEBUG_PREFIX, `Left eye param change - Raw values: paramId="${paramId}", min="${$('#live2d_left_eye_min').val()}", max="${$('#live2d_left_eye_max').val()}"`);
-    console.debug(DEBUG_PREFIX, `Left eye param change - Parsed values: paramId="${paramId}", minValue=${minValue}, maxValue=${maxValue}`);
-    
     // Сохраняем в настройки для конкретного персонажа и модели
     if (!extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']) {
         extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params'] = {
@@ -1320,7 +1317,7 @@ async function onLeftEyeParamChange() {
     extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['left_eye']['maxValue'] = maxValue;
     saveSettingsDebounced();
     
-    console.debug(DEBUG_PREFIX, `Updated left eye parameter for ${character}/${model_path}: ${paramId} (min=${minValue} [open], max=${maxValue} [closed])`);
+    console.debug(DEBUG_PREFIX, `Updated left eye parameter for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
 }
 
 async function onRightEyeParamChange() {

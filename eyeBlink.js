@@ -112,8 +112,6 @@ async function performEyeBlink(character, model, eye, settings) {
     
     eye.isBlinking = true;
     
-    console.debug(DEBUG_PREFIX, `Blinking ${eye.paramId}: minValue=${eye.minValue}, maxValue=${eye.maxValue}`);
-    
     try {
         // ФАЗА 1: Закрытие века (плавное движение от открытого к закрытому)
         const closeSteps = Math.ceil(closeDuration / frameTime);
@@ -123,13 +121,7 @@ async function performEyeBlink(character, model, eye, settings) {
             const progress = step / closeSteps;
             const eased = easeInOutCubic(progress);
             
-            // Интерполяция от minValue (открыт) к maxValue (закрыт)
             const value = eye.minValue + (eye.maxValue - eye.minValue) * eased;
-            
-            // Логирование первого и последнего значения
-            if (step === 0 || step === closeSteps) {
-                console.debug(DEBUG_PREFIX, `${eye.paramId} close phase: step=${step}/${closeSteps}, value=${value.toFixed(3)}`);
-            }
             
             try {
                 model.internalModel.coreModel.setParameterValueById(eye.paramId, value);
@@ -152,13 +144,7 @@ async function performEyeBlink(character, model, eye, settings) {
             const progress = step / openSteps;
             const eased = easeInOutCubic(progress);
             
-            // Интерполяция от maxValue (закрыт) к minValue (открыт)
             const value = eye.maxValue + (eye.minValue - eye.maxValue) * eased;
-            
-            // Логирование первого и последнего значения
-            if (step === 0 || step === openSteps) {
-                console.debug(DEBUG_PREFIX, `${eye.paramId} open phase: step=${step}/${openSteps}, value=${value.toFixed(3)}`);
-            }
             
             try {
                 model.internalModel.coreModel.setParameterValueById(eye.paramId, value);
@@ -224,13 +210,19 @@ async function eyeBlinkLoop(character, model, model_path) {
     
     // Загружаем параметры глаз из настроек персонажа
     const blinkParams = characterSettings.eye_blink_params;
+    
+    console.log(DEBUG_PREFIX, `Loading eye blink params from settings:`, blinkParams);
+    
     state.leftEye.paramId = blinkParams.left_eye?.paramId || '';
-    state.leftEye.minValue = blinkParams.left_eye?.minValue || 0;
-    state.leftEye.maxValue = blinkParams.left_eye?.maxValue || 1;
+    state.leftEye.minValue = blinkParams.left_eye?.minValue ?? 0;
+    state.leftEye.maxValue = blinkParams.left_eye?.maxValue ?? 1;
     
     state.rightEye.paramId = blinkParams.right_eye?.paramId || '';
-    state.rightEye.minValue = blinkParams.right_eye?.minValue || 0;
-    state.rightEye.maxValue = blinkParams.right_eye?.maxValue || 1;
+    state.rightEye.minValue = blinkParams.right_eye?.minValue ?? 0;
+    state.rightEye.maxValue = blinkParams.right_eye?.maxValue ?? 1;
+    
+    console.log(DEBUG_PREFIX, `Loaded left eye: paramId="${state.leftEye.paramId}", min=${state.leftEye.minValue}, max=${state.leftEye.maxValue}`);
+    console.log(DEBUG_PREFIX, `Loaded right eye: paramId="${state.rightEye.paramId}", min=${state.rightEye.minValue}, max=${state.rightEye.maxValue}`);
     
     // Проверяем, что хотя бы один глаз настроен
     if (!state.leftEye.paramId && !state.rightEye.paramId) {
