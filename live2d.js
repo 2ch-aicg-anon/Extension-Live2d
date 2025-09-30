@@ -47,6 +47,8 @@ export {
     startBodyMovement,
     stopBodyMovement,
     restartBodyMovement,
+    startMouthMonitoring,
+    stopMouthMonitoring,
 };
 
 let models = {};
@@ -56,6 +58,7 @@ let abortTalking = {};
 let previous_interaction = { 'character': '', 'message': '' };
 let last_motion = {};
 let autoAnimationsRunning = {}; // Track which animations are running for each character
+let mouthMonitoring = {}; // Track mouth monitoring loops for each character
 
 const EXPRESSION_API = {
     local: 0,
@@ -211,6 +214,62 @@ function showFrames(model) {
 
     model.addChild(foreground);
     model.addChild(hitAreaFrames);
+}
+
+// Функция мониторинга реального открытия рта для Body Movement System
+async function startMouthMonitoring(character, model, model_path) {
+    const parameter_mouth_open_y_id = extension_settings.live2d.characterModelsSettings[character][model_path]['param_mouth_open_y_id'];
+    
+    if (parameter_mouth_open_y_id === 'none') {
+        console.debug(DEBUG_PREFIX, 'No mouth parameter for', character, ', mouth monitoring disabled');
+        return;
+    }
+    
+    mouthMonitoring[character] = true;
+    console.debug(DEBUG_PREFIX, 'Starting mouth monitoring for', character);
+    
+    const MOUTH_OPEN_THRESHOLD = -50; // Порог открытия рта (значение выше = рот открыт)
+    const CHECK_INTERVAL = 50; // Проверяем каждые 50мс
+    let lastMouthState = false; // false = закрыт, true = открыт
+    
+    while (mouthMonitoring[character]) {
+        // Проверяем, что модель всё ещё существует
+        if (!model?.internalModel?.coreModel) {
+            console.debug(DEBUG_PREFIX, 'Model destroyed, stopping mouth monitoring for', character);
+            break;
+        }
+        
+        try {
+            // Получаем РЕАЛЬНОЕ значение параметра рта
+            const mouthValue = model.internalModel.coreModel.getParameterValueById(parameter_mouth_open_y_id);
+            
+            // Определяем, открыт ли рот
+            const isMouthOpen = mouthValue > MOUTH_OPEN_THRESHOLD;
+            
+            // Если состояние изменилось - уведомляем Body Movement System
+            if (isMouthOpen !== lastMouthState) {
+                notifyMouthActivity(character, isMouthOpen);
+                console.debug(DEBUG_PREFIX, `Mouth state changed for ${character}: ${isMouthOpen ? 'OPEN' : 'CLOSED'} (value: ${mouthValue})`);
+                lastMouthState = isMouthOpen;
+            }
+            
+        } catch (error) {
+            console.debug(DEBUG_PREFIX, 'Error monitoring mouth for', character, ':', error);
+        }
+        
+        await delay(CHECK_INTERVAL);
+    }
+    
+    mouthMonitoring[character] = false;
+    console.debug(DEBUG_PREFIX, 'Mouth monitoring stopped for', character);
+}
+
+async function stopMouthMonitoring(character) {
+    if (mouthMonitoring[character]) {
+        mouthMonitoring[character] = false;
+        console.debug(DEBUG_PREFIX, 'Stopping mouth monitoring for', character);
+        await delay(100);
+    }
 }
 
 async function loadLive2d(visible = true) {
@@ -372,6 +431,9 @@ async function loadLive2d(visible = true) {
         // Start body movement system
         startBodyMovement(character, model, model_path);
         
+        // Start mouth monitoring (РЕАЛЬНОЕ отслеживание открытия рта)
+        startMouthMonitoring(character, model, model_path);
+        
         console.debug(DEBUG_PREFIX, 'Finished loading model:', model);
     }
     console.debug(DEBUG_PREFIX, 'Models:', models);
@@ -496,6 +558,9 @@ async function removeModel(character) {
         // Останавливаем систему движения тела
         await stopBodyMovement(character);
         
+        // Останавливаем мониторинг рта
+        await stopMouthMonitoring(character);
+        
         models[character].destroy(true, true, true);
         delete models[character];
         console.debug(DEBUG_PREFIX,'Delete model from memory for', character);
@@ -610,34 +675,15 @@ async function playTalk(character, text) {
 	const duration = text.length * mouth_time_per_character;
 	let turns = 0;
 	let mouth_y = 0;
-	let lastMouthActivityNotify = Date.now(); // Для периодической проверки активности
-	
-	// Уведомляем систему движения тела о начале разговора
-	notifyMouthActivity(character, true);
-	
-	// TTS Binding система (@4eckme)
-	window.live2d_tts_bind = false;
-	
-	// Основной цикл анимации рта (оригинальный код @4eckme)
+	window.live2d_tts_bind = false; // @4eckme
 	while ((Date.now() - startTime) < duration || true) { // @4eckme
 		
 		// start @4eckme
 		model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, -100);
 		while (window.live2d_tts_bind === false) {
 			await delay(20);
-			
-			// КОСТЫЛЬ: Периодически проверяем, говорит ли еще персонаж
-			if (!is_talking[character]) {
-				console.debug(DEBUG_PREFIX, 'is_talking became false, exiting loop');
-				break;
-			}
 		}
 		// end @4eckme
-		
-		// Если is_talking стал false, выходим из цикла
-		if (!is_talking[character]) {
-			break;
-		}
 
 		if (abortTalking[character]) {
             console.debug(DEBUG_PREFIX,'Abort talking requested.');
@@ -653,14 +699,6 @@ async function playTalk(character, text) {
         mouth_y = Math.sin((Date.now() - startTime));
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, mouth_y);
         
-        // КОСТЫЛЬ: Периодически уведомляем Body Movement System что рот активен
-        // Это нужно потому что цикл бесконечный (|| true) и код после цикла не выполняется
-        const now = Date.now();
-        if (now - lastMouthActivityNotify > 100) { // Каждые 100мс обновляем статус
-        	notifyMouthActivity(character, true);
-        	lastMouthActivityNotify = now;
-        }
-        
         // Старая система прямой привязки параметров отключена
         // Теперь движения тела управляются системой bodyMovement.js
         // которая создаёт более естественные движения с шумом и инерцией
@@ -672,11 +710,6 @@ async function playTalk(character, text) {
     if (model?.internalModel?.coreModel !== undefined) {
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, -100); // close mouth
     }
-    
-    // КОСТЫЛЬ: Уведомляем систему движения тела о завершении разговора
-    // Это критически важно для возврата персонажа в idle режим
-    notifyMouthActivity(character, false);
-    
     is_talking[character] = false;
 }
 
