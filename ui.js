@@ -1282,14 +1282,12 @@ async function onRestartBodyMovementClick() {
 async function onEyeBlinkEnabledClick() {
     extension_settings.live2d.eyeBlinkEnabled = $('#live2d_eye_blink_enabled').is(':checked');
     saveSettingsDebounced();
-    console.debug(DEBUG_PREFIX, 'Eye blink enabled:', extension_settings.live2d.eyeBlinkEnabled);
 }
 
 async function onEyeBlinkSpeedChange() {
     extension_settings.live2d.eyeBlinkSpeed = parseFloat($('#live2d_eye_blink_speed').val());
     $('#live2d_eye_blink_speed_value').text(extension_settings.live2d.eyeBlinkSpeed.toFixed(1));
     saveSettingsDebounced();
-    console.debug(DEBUG_PREFIX, 'Eye blink speed:', extension_settings.live2d.eyeBlinkSpeed);
 }
 
 async function onLeftEyeParamChange() {
@@ -1316,8 +1314,6 @@ async function onLeftEyeParamChange() {
     extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['left_eye']['minValue'] = minValue;
     extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['left_eye']['maxValue'] = maxValue;
     saveSettingsDebounced();
-    
-    console.debug(DEBUG_PREFIX, `Updated left eye parameter for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
 }
 
 async function onRightEyeParamChange() {
@@ -1344,15 +1340,11 @@ async function onRightEyeParamChange() {
     extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['right_eye']['minValue'] = minValue;
     extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['right_eye']['maxValue'] = maxValue;
     saveSettingsDebounced();
-    
-    console.debug(DEBUG_PREFIX, `Updated right eye parameter for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
 }
 
 async function onRestartEyeBlinkClick() {
     const { restartEyeBlink, charactersWithModelLoaded, getModel } = await import('./live2d.js');
     const loadedCharacters = charactersWithModelLoaded();
-    
-    console.debug(DEBUG_PREFIX, 'Restarting eye blink for all loaded characters:', loadedCharacters);
     
     for (const character of loadedCharacters) {
         const model_path = extension_settings.live2d.characterModelMapping[character];
@@ -1362,6 +1354,4 @@ async function onRestartEyeBlinkClick() {
             await restartEyeBlink(character, model, model_path);
         }
     }
-    
-    console.debug(DEBUG_PREFIX, 'All eye blink systems restarted with current settings');
 }

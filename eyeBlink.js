@@ -211,8 +211,6 @@ async function eyeBlinkLoop(character, model, model_path) {
     // Загружаем параметры глаз из настроек персонажа
     const blinkParams = characterSettings.eye_blink_params;
     
-    console.log(DEBUG_PREFIX, `Loading eye blink params from settings:`, blinkParams);
-    
     state.leftEye.paramId = blinkParams.left_eye?.paramId || '';
     state.leftEye.minValue = blinkParams.left_eye?.minValue ?? 0;
     state.leftEye.maxValue = blinkParams.left_eye?.maxValue ?? 1;
@@ -220,9 +218,6 @@ async function eyeBlinkLoop(character, model, model_path) {
     state.rightEye.paramId = blinkParams.right_eye?.paramId || '';
     state.rightEye.minValue = blinkParams.right_eye?.minValue ?? 0;
     state.rightEye.maxValue = blinkParams.right_eye?.maxValue ?? 1;
-    
-    console.log(DEBUG_PREFIX, `Loaded left eye: paramId="${state.leftEye.paramId}", min=${state.leftEye.minValue}, max=${state.leftEye.maxValue}`);
-    console.log(DEBUG_PREFIX, `Loaded right eye: paramId="${state.rightEye.paramId}", min=${state.rightEye.minValue}, max=${state.rightEye.maxValue}`);
     
     // Проверяем, что хотя бы один глаз настроен
     if (!state.leftEye.paramId && !state.rightEye.paramId) {
@@ -239,9 +234,7 @@ async function eyeBlinkLoop(character, model, model_path) {
         blinkIntervalMax: extension_settings.live2d.eyeBlinkIntervalMax ?? BLINK_INTERVAL_MAX
     };
     
-    console.debug(DEBUG_PREFIX, `Eye blink settings for ${character}:`, settings);
-    console.debug(DEBUG_PREFIX, `Left eye: ${state.leftEye.paramId} (${state.leftEye.minValue} to ${state.leftEye.maxValue})`);
-    console.debug(DEBUG_PREFIX, `Right eye: ${state.rightEye.paramId} (${state.rightEye.minValue} to ${state.rightEye.maxValue})`);
+    console.debug(DEBUG_PREFIX, `Eye blink started for ${character}`);
     
     // Основной цикл
     while (state.isRunning) {
@@ -266,8 +259,6 @@ async function eyeBlinkLoop(character, model, model_path) {
             
             // Планируем следующее моргание
             state.nextBlinkTime = now + state.getRandomInterval();
-            
-            console.debug(DEBUG_PREFIX, `${character} blinked, next blink in ${Math.round((state.nextBlinkTime - now) / 1000)}s`);
         }
         
         // Небольшая задержка перед следующей проверкой
