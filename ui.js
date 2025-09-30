@@ -85,6 +85,11 @@ export {
     onBodyMovementSpringStiffnessChange,
     onBodyMovementImpulseInertiaChange,
     onRestartBodyMovementClick,
+    onEyeBlinkEnabledClick,
+    onEyeBlinkSpeedChange,
+    onLeftEyeParamChange,
+    onRightEyeParamChange,
+    onRestartEyeBlinkClick,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -471,6 +476,10 @@ async function loadModelUi() {
                 'param2': { 'paramId': '', 'minValue': 0, 'maxValue': -15 },
                 'param3': { 'paramId': '', 'minValue': 0, 'maxValue': 10 }
             },
+            'eye_blink_params': {
+                'left_eye': { 'paramId': '', 'minValue': 0, 'maxValue': 1 },
+                'right_eye': { 'paramId': '', 'minValue': 0, 'maxValue': 1 }
+            },
             'animation_starter': { 'expression': 'none', 'motion': 'none', 'delay': 0 },
             'animation_default': { 'expression': 'none', 'motion': 'none' },
             'animation_click': { 'expression': 'none', 'motion': 'none', 'message': '' },
@@ -578,6 +587,32 @@ async function loadModelUi() {
         $('#live2d_mouth_linked_param_id_3').val('');
         $('#live2d_mouth_linked_min_3').val(0);
         $('#live2d_mouth_linked_max_3').val(10);
+    }
+    
+    // Load eye blink parameters for this character and model
+    if (extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']) {
+        $('#live2d_left_eye_param_id').val(extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['left_eye']['paramId']);
+        $('#live2d_left_eye_min').val(extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['left_eye']['minValue']);
+        $('#live2d_left_eye_max').val(extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['left_eye']['maxValue']);
+        
+        $('#live2d_right_eye_param_id').val(extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['right_eye']['paramId']);
+        $('#live2d_right_eye_min').val(extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['right_eye']['minValue']);
+        $('#live2d_right_eye_max').val(extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['right_eye']['maxValue']);
+    } else {
+        // Initialize if not exists
+        extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params'] = {
+            'left_eye': { 'paramId': '', 'minValue': 0, 'maxValue': 1 },
+            'right_eye': { 'paramId': '', 'minValue': 0, 'maxValue': 1 }
+        };
+        saveSettingsDebounced();
+        
+        // Load defaults in UI
+        $('#live2d_left_eye_param_id').val('');
+        $('#live2d_left_eye_min').val(0);
+        $('#live2d_left_eye_max').val(1);
+        $('#live2d_right_eye_param_id').val('');
+        $('#live2d_right_eye_min').val(0);
+        $('#live2d_right_eye_max').val(1);
     }
 
     // Mouse tracking parameters
@@ -1241,4 +1276,92 @@ async function onRestartBodyMovementClick() {
     }
     
     console.debug(DEBUG_PREFIX, 'All body movements restarted with current settings');
+}
+
+// Eye blink system event handlers
+async function onEyeBlinkEnabledClick() {
+    extension_settings.live2d.eyeBlinkEnabled = $('#live2d_eye_blink_enabled').is(':checked');
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Eye blink enabled:', extension_settings.live2d.eyeBlinkEnabled);
+}
+
+async function onEyeBlinkSpeedChange() {
+    extension_settings.live2d.eyeBlinkSpeed = parseFloat($('#live2d_eye_blink_speed').val());
+    $('#live2d_eye_blink_speed_value').text(extension_settings.live2d.eyeBlinkSpeed.toFixed(1));
+    saveSettingsDebounced();
+    console.debug(DEBUG_PREFIX, 'Eye blink speed:', extension_settings.live2d.eyeBlinkSpeed);
+}
+
+async function onLeftEyeParamChange() {
+    const character = String($('#live2d_character_select').val());
+    const model_path = String($('#live2d_model_select').val());
+    
+    if (character === 'none' || model_path === 'none') {
+        return;
+    }
+    
+    const paramId = $('#live2d_left_eye_param_id').val().trim();
+    const minValue = Number($('#live2d_left_eye_min').val());
+    const maxValue = Number($('#live2d_left_eye_max').val());
+    
+    // Сохраняем в настройки для конкретного персонажа и модели
+    if (!extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']) {
+        extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params'] = {
+            'left_eye': { 'paramId': '', 'minValue': 0, 'maxValue': 1 },
+            'right_eye': { 'paramId': '', 'minValue': 0, 'maxValue': 1 }
+        };
+    }
+    
+    extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['left_eye']['paramId'] = paramId;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['left_eye']['minValue'] = minValue;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['left_eye']['maxValue'] = maxValue;
+    saveSettingsDebounced();
+    
+    console.debug(DEBUG_PREFIX, `Updated left eye parameter for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
+}
+
+async function onRightEyeParamChange() {
+    const character = String($('#live2d_character_select').val());
+    const model_path = String($('#live2d_model_select').val());
+    
+    if (character === 'none' || model_path === 'none') {
+        return;
+    }
+    
+    const paramId = $('#live2d_right_eye_param_id').val().trim();
+    const minValue = Number($('#live2d_right_eye_min').val());
+    const maxValue = Number($('#live2d_right_eye_max').val());
+    
+    // Сохраняем в настройки для конкретного персонажа и модели
+    if (!extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']) {
+        extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params'] = {
+            'left_eye': { 'paramId': '', 'minValue': 0, 'maxValue': 1 },
+            'right_eye': { 'paramId': '', 'minValue': 0, 'maxValue': 1 }
+        };
+    }
+    
+    extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['right_eye']['paramId'] = paramId;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['right_eye']['minValue'] = minValue;
+    extension_settings.live2d.characterModelsSettings[character][model_path]['eye_blink_params']['right_eye']['maxValue'] = maxValue;
+    saveSettingsDebounced();
+    
+    console.debug(DEBUG_PREFIX, `Updated right eye parameter for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
+}
+
+async function onRestartEyeBlinkClick() {
+    const { restartEyeBlink, charactersWithModelLoaded, getModel } = await import('./live2d.js');
+    const loadedCharacters = charactersWithModelLoaded();
+    
+    console.debug(DEBUG_PREFIX, 'Restarting eye blink for all loaded characters:', loadedCharacters);
+    
+    for (const character of loadedCharacters) {
+        const model_path = extension_settings.live2d.characterModelMapping[character];
+        const model = getModel(character);
+        
+        if (model_path && model) {
+            await restartEyeBlink(character, model, model_path);
+        }
+    }
+    
+    console.debug(DEBUG_PREFIX, 'All eye blink systems restarted with current settings');
 }

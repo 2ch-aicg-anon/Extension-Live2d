@@ -111,6 +111,11 @@ import {
     onBodyMovementSpringStiffnessChange,
     onBodyMovementImpulseInertiaChange,
     onRestartBodyMovementClick,
+    onEyeBlinkEnabledClick,
+    onEyeBlinkSpeedChange,
+    onLeftEyeParamChange,
+    onRightEyeParamChange,
+    onRestartEyeBlinkClick,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -187,6 +192,10 @@ const defaultSettings = {
     bodyMovementDamping: 0.85,
     bodyMovementSpringStiffness: 0.15,
     bodyMovementImpulseInertia: 0.92,
+    
+    // Eye blink system settings
+    eyeBlinkEnabled: true,
+    eyeBlinkSpeed: 1.0,
 };
 
 function loadSettings() {
@@ -284,6 +293,14 @@ function loadSettings() {
     if (extension_settings.live2d.bodyMovementImpulseInertia === undefined) {
         extension_settings.live2d.bodyMovementImpulseInertia = defaultSettings.bodyMovementImpulseInertia;
     }
+    
+    // Ensure eye blink settings exist with defaults
+    if (extension_settings.live2d.eyeBlinkEnabled === undefined) {
+        extension_settings.live2d.eyeBlinkEnabled = defaultSettings.eyeBlinkEnabled;
+    }
+    if (extension_settings.live2d.eyeBlinkSpeed === undefined) {
+        extension_settings.live2d.eyeBlinkSpeed = defaultSettings.eyeBlinkSpeed;
+    }
 
     $('#live2d_enabled_checkbox').prop('checked', extension_settings.live2d.enabled);
     $('#live2d_follow_cursor_checkbox').prop('checked', extension_settings.live2d.followCursor);
@@ -339,6 +356,11 @@ function loadSettings() {
     $('#live2d_body_movement_spring_stiffness_value').text(extension_settings.live2d.bodyMovementSpringStiffness.toFixed(2));
     $('#live2d_body_movement_impulse_inertia').val(extension_settings.live2d.bodyMovementImpulseInertia);
     $('#live2d_body_movement_impulse_inertia_value').text(extension_settings.live2d.bodyMovementImpulseInertia.toFixed(2));
+    
+    // Eye blink settings
+    $('#live2d_eye_blink_enabled').prop('checked', extension_settings.live2d.eyeBlinkEnabled);
+    $('#live2d_eye_blink_speed').val(extension_settings.live2d.eyeBlinkSpeed);
+    $('#live2d_eye_blink_speed_value').text(extension_settings.live2d.eyeBlinkSpeed.toFixed(1));
 }
 
 //#############################//
@@ -517,6 +539,17 @@ jQuery(async () => {
     $('#live2d_body_movement_spring_stiffness').on('input', onBodyMovementSpringStiffnessChange);
     $('#live2d_body_movement_impulse_inertia').on('input', onBodyMovementImpulseInertiaChange);
     $('#live2d_restart_body_movement_button').on('click', onRestartBodyMovementClick);
+    
+    // Eye blink system event handlers
+    $('#live2d_eye_blink_enabled').on('click', onEyeBlinkEnabledClick);
+    $('#live2d_eye_blink_speed').on('input', onEyeBlinkSpeedChange);
+    $('#live2d_left_eye_param_id').on('input', onLeftEyeParamChange);
+    $('#live2d_left_eye_min').on('input', onLeftEyeParamChange);
+    $('#live2d_left_eye_max').on('input', onLeftEyeParamChange);
+    $('#live2d_right_eye_param_id').on('input', onRightEyeParamChange);
+    $('#live2d_right_eye_min').on('input', onRightEyeParamChange);
+    $('#live2d_right_eye_max').on('input', onRightEyeParamChange);
+    $('#live2d_restart_eye_blink_button').on('click', onRestartEyeBlinkClick);
 
     // Module worker
     const wrapper = new ModuleWorkerWrapper(moduleWorker);

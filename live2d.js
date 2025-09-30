@@ -21,6 +21,12 @@ import {
     notifyMouthActivity
 } from './bodyMovement.js';
 
+import {
+    startEyeBlink,
+    stopEyeBlink,
+    restartEyeBlink
+} from './eyeBlink.js';
+
 export {
     loadLive2d,
     updateExpression,
@@ -49,6 +55,9 @@ export {
     restartBodyMovement,
     startMouthMonitoring,
     stopMouthMonitoring,
+    startEyeBlink,
+    stopEyeBlink,
+    restartEyeBlink,
 };
 
 let models = {};
@@ -461,6 +470,9 @@ async function loadLive2d(visible = true) {
         // Start mouth monitoring (РЕАЛЬНОЕ отслеживание открытия рта)
         startMouthMonitoring(character, model, model_path);
         
+        // Start eye blink system
+        startEyeBlink(character, model, model_path);
+        
         console.debug(DEBUG_PREFIX, 'Finished loading model:', model);
     }
     console.debug(DEBUG_PREFIX, 'Models:', models);
@@ -587,6 +599,9 @@ async function removeModel(character) {
         
         // Останавливаем мониторинг рта
         await stopMouthMonitoring(character);
+        
+        // Останавливаем систему моргания
+        await stopEyeBlink(character);
         
         models[character].destroy(true, true, true);
         delete models[character];

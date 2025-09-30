@@ -755,6 +755,112 @@
                         <small>Restart body movement with current settings (use after changing parameters)</small>
                     </label>
                     <div>
+                        <h4>Eye Blinking System</h4>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_eye_blink_enabled">
+                                <input id="live2d_eye_blink_enabled" type="checkbox" checked />
+                                Enable Realistic Eye Blinking
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <small>
+                                Enables realistic automatic eye blinking based on human blink patterns (~15-20 blinks/min)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_eye_blink_speed">
+                                Blink Speed <br/>(<span id="live2d_eye_blink_speed_value"></span>x)
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_eye_blink_speed" type="range" min="0.5" max="3.0" step="0.1" value="1.0" />
+                            <small>
+                                How fast the eyelids move (0.5 = slow motion, 1.0 = natural, 3.0 = very fast)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_left_eye_param_id">
+                                Left Eye Parameter ID
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_left_eye_param_id" type="text" placeholder="Enter left eye parameter ID (e.g., ParamEyeLOpen)" />
+                            <small>
+                                Parameter ID for left eye blink (check console via "Log All Parameters" button above)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label>
+                                Left Eye Range
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <div style="flex: 1;">
+                                    <label for="live2d_left_eye_min" style="font-size: 12px;">Min (eye open):</label>
+                                    <input id="live2d_left_eye_min" type="number" min="-100" max="100" step="0.1" value="0" style="width: 100%;" />
+                                </div>
+                                <div style="flex: 1;">
+                                    <label for="live2d_left_eye_max" style="font-size: 12px;">Max (eye closed):</label>
+                                    <input id="live2d_left_eye_max" type="number" min="-100" max="100" step="0.1" value="1" style="width: 100%;" />
+                                </div>
+                            </div>
+                            <small>
+                                Min = value when eye is open, Max = value when eye is closed
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label for="live2d_right_eye_param_id">
+                                Right Eye Parameter ID
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <input id="live2d_right_eye_param_id" type="text" placeholder="Enter right eye parameter ID (e.g., ParamEyeROpen)" />
+                            <small>
+                                Parameter ID for right eye blink (check console via "Log All Parameters" button above)
+                            </small>
+                        </div>
+                    </div>
+                    <div class="live2d-parameter">
+                        <div class="live2d-parameter-title">
+                            <label>
+                                Right Eye Range
+                            </label>
+                        </div>
+                        <div class="live2d-slider-div">
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <div style="flex: 1;">
+                                    <label for="live2d_right_eye_min" style="font-size: 12px;">Min (eye open):</label>
+                                    <input id="live2d_right_eye_min" type="number" min="-100" max="100" step="0.1" value="0" style="width: 100%;" />
+                                </div>
+                                <div style="flex: 1;">
+                                    <label for="live2d_right_eye_max" style="font-size: 12px;">Max (eye closed):</label>
+                                    <input id="live2d_right_eye_max" type="number" min="-100" max="100" step="0.1" value="1" style="width: 100%;" />
+                                </div>
+                            </div>
+                            <small>
+                                Min = value when eye is open, Max = value when eye is closed
+                            </small>
+                        </div>
+                    </div>
+                    <label class="checkbox_label" for="live2d_restart_eye_blink_button">
+                        <div id="live2d_restart_eye_blink_button" class="menu_button">
+                            <i class="fa fa-refresh" aria-hidden="true"></i>
+                            Restart Eye Blink System
+                        </div>
+                        <small>Restart eye blinking with current settings (use after changing parameters)</small>
+                    </label>
+                    <div>
                         <h4>Auto Animations</h4>
                     </div>
                     <div class="live2d-parameter">
