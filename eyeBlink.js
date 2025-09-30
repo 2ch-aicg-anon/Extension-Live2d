@@ -17,52 +17,58 @@ export {
 const eyeBlinkStates = {};
 
 // ===============================================================================
-// РЕАЛИСТИЧНЫЕ КОНСТАНТЫ МОРГАНИЯ ЧЕЛОВЕКА
+// РЕАЛИСТИЧНЫЕ КОНСТАНТЫ МОРГАНИЯ ЧЕЛОВЕКА (БИОЛОГИЧЕСКИ ТОЧНЫЕ v3.0)
 // ===============================================================================
-// Основаны на научных исследованиях моргания человека:
+// Основаны на научных исследованиях и реальных наблюдениях:
 // - Частота: 15-20 морганий в минуту (переменная, зависит от состояния)
-// - Длительность: 100-400мс (в среднем 150мс с вариациями)
-// - Фазы: закрытие быстрее открытия (асимметрия)
-// - Типы: полные, частичные, рефлекторные (двойные/тройные)
-// - Асинхронность: глаза моргают с небольшой задержкой 0-35мс
+// - Длительность: 50-150мс (УСКОРЕНО для естественности, в среднем 100мс)
+// - Фазы: закрытие быстрее открытия (асимметрия) + вариативность ±8%
+// - Типы: полные (85%), частичные (5%), рефлекторные (двойные 6%, тройные 1%)
+// - Рефлексы: первое моргание полное, последующие частичные (35-60%) и быстрее (×1.5)
+// - Асинхронность: глаза моргают практически синхронно (≤10 мс)
+// - Easing: агрессивные кривые (cubic/quart) имитируют "обрезанный диапазон"
 
 // Интервалы между морганиями (в миллисекундах)
 // У реальных людей частота моргания НЕПОСТОЯННА и зависит от "состояния"
 const BLINK_INTERVAL_MIN = 2000;  // Минимальный интервал между морганиями (2 сек)
-const BLINK_INTERVAL_MAX = 8000;  // Максимальный интервал между морганиями (8 сек) - УВЕЛИЧЕН
+const BLINK_INTERVAL_MAX = 6000;  // Максимальный интервал между морганиями (6 сек) - биологический максимум
 const BLINK_INTERVAL_AVERAGE = 4000; // Средний интервал (4 сек = ~15 морганий/мин)
 
-// Вариативность длительности моргания
-const BLINK_DURATION_MIN = 100;    // Быстрое моргание (мс)
-const BLINK_DURATION_AVERAGE = 150; // Среднее моргание (мс)
-const BLINK_DURATION_MAX = 400;    // Медленное моргание (мс)
+// Вариативность длительности моргания (УСКОРЕНО для естественности)
+const BLINK_DURATION_MIN = 50;     // Быстрое моргание (мс)
+const BLINK_DURATION_AVERAGE = 100; // Среднее моргание (мс)
+const BLINK_DURATION_MAX = 150;    // Медленное моргание (мс)
 
 // Фазы моргания - АСИММЕТРИЧНЫЕ (закрытие быстрее открытия)
 const CLOSE_PHASE_RATIO = 0.40;   // 40% времени - закрытие века (быстрее)
 const CLOSED_PHASE_RATIO = 0.10;  // 10% времени - веко полностью закрыто
 const OPEN_PHASE_RATIO = 0.50;    // 50% времени - открытие века (медленнее)
+const PHASE_VARIANCE = 0.08;      // ±8% вариация соотношений фаз для непредсказуемости
 
-// Асинхронность между глазами - СБАЛАНСИРОВАННАЯ
+// Асинхронность между глазами - БИОЛОГИЧЕСКИ ТОЧНАЯ
 const EYE_DESYNC_MIN = 0;       // Минимальная асинхронность
-const EYE_DESYNC_MAX = 35;      // Максимальная асинхронность (умеренная, едва заметная)
+const EYE_DESYNC_MAX = 10;      // Максимальная асинхронность (≤10 мс - как у реальных людей)
 
-// Вероятности различных типов морганий (РЕАЛИСТИЧНЫЕ - редкие рефлексы)
-const DOUBLE_BLINK_CHANCE = 0.03;   // 3% - двойное моргание (редко)
-const TRIPLE_BLINK_CHANCE = 0.005;  // 0.5% - тройное моргание (очень редко)
-const PARTIAL_BLINK_CHANCE = 0.12;  // 12% - частичное моргание (неполное закрытие)
+// Вероятности различных типов морганий (РЕАЛИСТИЧНЫЕ)
+const DOUBLE_BLINK_CHANCE = 0.06;   // 6% - двойное моргание (первое полное, второе частичное)
+const TRIPLE_BLINK_CHANCE = 0.01;   // 1% - тройное моргание (первое полное, остальные частичные)
+const PARTIAL_BLINK_CHANCE = 0.05;  // 5% - частичное моргание (неполное закрытие)
 
 // Параметры частичного моргания
 const PARTIAL_BLINK_MIN = 0.40;     // Минимальное закрытие (40% от полного)
 const PARTIAL_BLINK_MAX = 0.75;     // Максимальное закрытие (75% от полного)
 
 // Микродвижения век между морганиями
-const EYELID_MICROMOVE_CHANCE = 0.15;  // 15% шанс микродвижения при каждой проверке
+const EYELID_MICROMOVE_CHANCE = 0.05;  // 5% шанс микродвижения при каждой проверке (было 15%)
 const EYELID_MICROMOVE_AMPLITUDE = 0.05; // Амплитуда (5% от диапазона)
 const EYELID_MICROMOVE_DURATION = 80;    // Длительность микродвижения (мс)
 
-// Интервал между морганиями в серии (для двойных/тройных морганий)
+// Параметры рефлекторных морганий (двойное/тройное)
 const REFLEX_BLINK_INTERVAL_MIN = 150;  // Минимум между морганиями в серии
 const REFLEX_BLINK_INTERVAL_MAX = 400;  // Максимум между морганиями в серии
+const REFLEX_BLINK_CLOSURE_MIN = 0.35;  // Минимальное закрытие второго/третьего моргания (35%)
+const REFLEX_BLINK_CLOSURE_MAX = 0.60;  // Максимальное закрытие второго/третьего моргания (60%)
+const REFLEX_BLINK_SPEED_MULT = 1.5;    // Множитель скорости для последующих морганий
 
 // ===============================================================================
 // ДИНАМИЧЕСКИЕ СОСТОЯНИЯ - для устранения предсказуемости
@@ -198,14 +204,14 @@ class EyeBlinkState {
 // ФУНКЦИИ ИНТЕРПОЛЯЦИИ С РАЗЛИЧНЫМ EASING
 // ===============================================================================
 
-// Закрытие века - более резкое (быстрый старт, быстрое ускорение)
-function easeInQuad(t) {
-    return t * t;
+// Закрытие века - очень резкое (имитирует "обрезанную" кривую при расширенном диапазоне)
+function easeInCubic(t) {
+    return t * t * t;  // Более агрессивное ускорение
 }
 
-// Открытие века - более плавное (медленное замедление в конце)
-function easeOutCubic(t) {
-    return 1 - Math.pow(1 - t, 3);
+// Открытие века - с резким стартом и плавным замедлением
+function easeOutQuart(t) {
+    return 1 - Math.pow(1 - t, 4);  // Более динамичное открытие
 }
 
 // Микродвижения - очень мягкое
@@ -272,19 +278,21 @@ function getRandomEyeDesync() {
 
 // Функция для выполнения одного моргания одного глаза
 // closureAmount - степень закрытия глаза (0.0 - 1.0), для частичных морганий
-async function performEyeBlink(character, model, eye, settings, closureAmount = 1.0) {
+// speedMultiplier - множитель скорости (для рефлекторных морганий)
+async function performEyeBlink(character, model, eye, settings, closureAmount = 1.0, speedMultiplier = 1.0) {
     if (!eye.paramId || eye.paramId === '') return;
     
-    const blinkSpeed = settings.blinkSpeed || 1.0;
+    const blinkSpeed = (settings.blinkSpeed || 1.0) * speedMultiplier;
     
     // Генерируем СЛУЧАЙНУЮ длительность для каждого моргания
     const baseDuration = getRandomBlinkDuration();
     const totalDuration = baseDuration / blinkSpeed;
     
-    // Вычисляем длительности фаз (АСИММЕТРИЧНЫЕ - закрытие быстрее открытия)
-    const closeDuration = totalDuration * CLOSE_PHASE_RATIO;
-    const closedDuration = totalDuration * CLOSED_PHASE_RATIO;
-    const openDuration = totalDuration * OPEN_PHASE_RATIO;
+    // Добавляем ВАРИАТИВНОСТЬ к фазовым соотношениям (±8%)
+    const variance = () => 1 + (Math.random() * 2 - 1) * PHASE_VARIANCE;
+    const closeDuration = totalDuration * CLOSE_PHASE_RATIO * variance();
+    const closedDuration = totalDuration * CLOSED_PHASE_RATIO * variance();
+    const openDuration = totalDuration * OPEN_PHASE_RATIO * variance();
     
     const FRAME_RATE = 60; // 60 FPS
     const frameTime = 1000 / FRAME_RATE;
@@ -295,13 +303,13 @@ async function performEyeBlink(character, model, eye, settings, closureAmount = 
     const targetClosedValue = eye.minValue + (eye.maxValue - eye.minValue) * closureAmount;
     
     try {
-        // ФАЗА 1: Закрытие века (БЫСТРОЕ, использует easeInQuad)
+        // ФАЗА 1: Закрытие века (РЕЗКОЕ, использует easeInCubic)
         const closeSteps = Math.ceil(closeDuration / frameTime);
         for (let step = 0; step <= closeSteps; step++) {
             if (!eye.isBlinking) break; // Прервано
             
             const progress = step / closeSteps;
-            const eased = easeInQuad(progress); // Быстрое закрытие
+            const eased = easeInCubic(progress); // Резкое закрытие
             
             const value = eye.minValue + (targetClosedValue - eye.minValue) * eased;
             
@@ -318,13 +326,13 @@ async function performEyeBlink(character, model, eye, settings, closureAmount = 
         // ФАЗА 2: Веко закрыто (пауза)
         await delay(closedDuration);
         
-        // ФАЗА 3: Открытие века (МЕДЛЕННОЕ, использует easeOutCubic)
+        // ФАЗА 3: Открытие века (ДИНАМИЧНОЕ, использует easeOutQuart)
         const openSteps = Math.ceil(openDuration / frameTime);
         for (let step = 0; step <= openSteps; step++) {
             if (!eye.isBlinking) break; // Прервано
             
             const progress = step / openSteps;
-            const eased = easeOutCubic(progress); // Плавное открытие
+            const eased = easeOutQuart(progress); // Динамичное открытие
             
             const value = targetClosedValue + (eye.minValue - targetClosedValue) * eased;
             
@@ -409,15 +417,15 @@ async function performEyelidMicromove(character, model, eye) {
 
 // Функция для выполнения моргания обоих глаз
 // Поддерживает различные типы: полное, частичное, двойное, тройное
-async function performBothEyesBlink(character, model, state, settings, blinkType) {
+async function performBothEyesBlink(character, model, state, settings, blinkType, speedMultiplier = 1.0) {
     const closureAmount = blinkType.closure || 1.0;
     
-    // Генерируем УЛУЧШЕННУЮ асинхронность между глазами
+    // Генерируем биологически точную асинхронность между глазами (≤10 мс)
     const desync = getRandomEyeDesync();
     
     // Запускаем моргание левого глаза
     if (state.leftEye.paramId && state.leftEye.paramId !== '') {
-        performEyeBlink(character, model, state.leftEye, settings, closureAmount);
+        performEyeBlink(character, model, state.leftEye, settings, closureAmount, speedMultiplier);
     }
     
     // Задержка перед морганием правого глаза
@@ -427,18 +435,29 @@ async function performBothEyesBlink(character, model, state, settings, blinkType
     
     // Запускаем моргание правого глаза
     if (state.rightEye.paramId && state.rightEye.paramId !== '') {
-        performEyeBlink(character, model, state.rightEye, settings, closureAmount);
+        performEyeBlink(character, model, state.rightEye, settings, closureAmount, speedMultiplier);
     }
 }
 
 // Функция для выполнения серии морганий (двойное/тройное - рефлекторное)
+// Первое моргание ПОЛНОЕ, последующие - ЧАСТИЧНЫЕ и БЫСТРЫЕ (как у реальных людей)
 async function performBlinkSeries(character, model, state, settings, count) {
     for (let i = 0; i < count; i++) {
-        // Определяем тип для каждого моргания в серии
-        // В серии все моргания полные (не частичные)
-        const blinkType = { type: 'full', closure: 1.0 };
+        let blinkType, speedMult;
         
-        await performBothEyesBlink(character, model, state, settings, blinkType);
+        if (i === 0) {
+            // Первое моргание - полное и нормальной скорости
+            blinkType = { type: 'full', closure: 1.0 };
+            speedMult = 1.0;
+        } else {
+            // Последующие моргания - частичные и быстрые
+            const closure = REFLEX_BLINK_CLOSURE_MIN + 
+                          Math.random() * (REFLEX_BLINK_CLOSURE_MAX - REFLEX_BLINK_CLOSURE_MIN);
+            blinkType = { type: 'reflex_partial', closure };
+            speedMult = REFLEX_BLINK_SPEED_MULT;
+        }
+        
+        await performBothEyesBlink(character, model, state, settings, blinkType, speedMult);
         
         // Интервал между морганиями в серии (кроме последнего)
         if (i < count - 1) {
