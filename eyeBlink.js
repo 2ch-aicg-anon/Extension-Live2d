@@ -112,6 +112,8 @@ async function performEyeBlink(character, model, eye, settings) {
     
     eye.isBlinking = true;
     
+    console.debug(DEBUG_PREFIX, `Blinking ${eye.paramId}: minValue=${eye.minValue}, maxValue=${eye.maxValue}`);
+    
     try {
         // ФАЗА 1: Закрытие века (плавное движение от открытого к закрытому)
         const closeSteps = Math.ceil(closeDuration / frameTime);
@@ -121,7 +123,13 @@ async function performEyeBlink(character, model, eye, settings) {
             const progress = step / closeSteps;
             const eased = easeInOutCubic(progress);
             
+            // Интерполяция от minValue (открыт) к maxValue (закрыт)
             const value = eye.minValue + (eye.maxValue - eye.minValue) * eased;
+            
+            // Логирование первого и последнего значения
+            if (step === 0 || step === closeSteps) {
+                console.debug(DEBUG_PREFIX, `${eye.paramId} close phase: step=${step}/${closeSteps}, value=${value.toFixed(3)}`);
+            }
             
             try {
                 model.internalModel.coreModel.setParameterValueById(eye.paramId, value);
@@ -144,7 +152,13 @@ async function performEyeBlink(character, model, eye, settings) {
             const progress = step / openSteps;
             const eased = easeInOutCubic(progress);
             
+            // Интерполяция от maxValue (закрыт) к minValue (открыт)
             const value = eye.maxValue + (eye.minValue - eye.maxValue) * eased;
+            
+            // Логирование первого и последнего значения
+            if (step === 0 || step === openSteps) {
+                console.debug(DEBUG_PREFIX, `${eye.paramId} open phase: step=${step}/${openSteps}, value=${value.toFixed(3)}`);
+            }
             
             try {
                 model.internalModel.coreModel.setParameterValueById(eye.paramId, value);
