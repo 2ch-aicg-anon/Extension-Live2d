@@ -228,9 +228,22 @@ async function startMouthMonitoring(character, model, model_path) {
     mouthMonitoring[character] = true;
     console.debug(DEBUG_PREFIX, 'Starting mouth monitoring for', character);
     
-    const MOUTH_OPEN_THRESHOLD = -50; // Порог открытия рта (значение выше = рот открыт)
     const CHECK_INTERVAL = 50; // Проверяем каждые 50мс
-    let lastMouthState = false; // false = закрыт, true = открыт
+    const MOUTH_MOVEMENT_THRESHOLD = 0.3; // Порог изменения для определения активности
+    
+    let lastMouthState = false; // false = закрыт/idle, true = открыт/talking
+    let baselineMouthValue = null; // Базовое значение рта в покое
+    let mouthMovementDetected = Date.now(); // Время последнего движения рта
+    const IDLE_TIMEOUT = 500; // Через 500мс без движения - переход в idle
+    
+    // Получаем начальное значение рта (baseline)
+    try {
+        baselineMouthValue = model.internalModel.coreModel.getParameterValueById(parameter_mouth_open_y_id);
+        console.log(DEBUG_PREFIX, `Baseline mouth value for ${character}: ${baselineMouthValue}`);
+    } catch (error) {
+        console.debug(DEBUG_PREFIX, 'Error getting baseline mouth value:', error);
+        baselineMouthValue = 0;
+    }
     
     while (mouthMonitoring[character]) {
         // Проверяем, что модель всё ещё существует
@@ -243,14 +256,28 @@ async function startMouthMonitoring(character, model, model_path) {
             // Получаем РЕАЛЬНОЕ значение параметра рта
             const mouthValue = model.internalModel.coreModel.getParameterValueById(parameter_mouth_open_y_id);
             
-            // Определяем, открыт ли рот
-            const isMouthOpen = mouthValue > MOUTH_OPEN_THRESHOLD;
+            // Вычисляем отклонение от базового значения
+            const deviation = Math.abs(mouthValue - baselineMouthValue);
             
-            // Если состояние изменилось - уведомляем Body Movement System
-            if (isMouthOpen !== lastMouthState) {
-                notifyMouthActivity(character, isMouthOpen);
-                console.debug(DEBUG_PREFIX, `Mouth state changed for ${character}: ${isMouthOpen ? 'OPEN' : 'CLOSED'} (value: ${mouthValue})`);
-                lastMouthState = isMouthOpen;
+            // Определяем, есть ли значительное движение рта
+            if (deviation > MOUTH_MOVEMENT_THRESHOLD) {
+                mouthMovementDetected = Date.now();
+                
+                // Если рот начал двигаться - переходим в talking
+                if (!lastMouthState) {
+                    lastMouthState = true;
+                    notifyMouthActivity(character, true);
+                    console.log(DEBUG_PREFIX, `Mouth OPENED for ${character}: value=${mouthValue.toFixed(2)}, baseline=${baselineMouthValue.toFixed(2)}, deviation=${deviation.toFixed(2)}`);
+                }
+            } else {
+                // Проверяем, прошло ли достаточно времени без движения для перехода в idle
+                const timeSinceLastMovement = Date.now() - mouthMovementDetected;
+                
+                if (lastMouthState && timeSinceLastMovement > IDLE_TIMEOUT) {
+                    lastMouthState = false;
+                    notifyMouthActivity(character, false);
+                    console.log(DEBUG_PREFIX, `Mouth CLOSED for ${character}: value=${mouthValue.toFixed(2)}, baseline=${baselineMouthValue.toFixed(2)}, no movement for ${timeSinceLastMovement}ms`);
+                }
             }
             
         } catch (error) {
