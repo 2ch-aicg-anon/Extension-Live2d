@@ -1078,10 +1078,7 @@ async function onMouthLinkedParam1Change() {
     extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param1']['maxValue'] = maxValue;
     saveSettingsDebounced();
     
-    // Также обновляем в live2d.js для использования в функции playTalk
-    const { updateMouthLinkedSettings } = await import('./live2d.js');
-    await updateMouthLinkedSettings(0, paramId, minValue, maxValue); // Index 0 для первого параметра
-    
+    // БАГ 7 FIX: Удалены legacy вызовы updateMouthLinkedSettings - настройки теперь читаются напрямую из extension_settings
     console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 1 for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
 }
 
@@ -1111,10 +1108,7 @@ async function onMouthLinkedParam2Change() {
     extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param2']['maxValue'] = maxValue;
     saveSettingsDebounced();
     
-    // Также обновляем в live2d.js для использования в функции playTalk
-    const { updateMouthLinkedSettings } = await import('./live2d.js');
-    await updateMouthLinkedSettings(1, paramId, minValue, maxValue); // Index 1 для второго параметра
-    
+    // БАГ 7 FIX: Удалены legacy вызовы updateMouthLinkedSettings - настройки теперь читаются напрямую из extension_settings
     console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 2 for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
 }
 
@@ -1144,10 +1138,7 @@ async function onMouthLinkedParam3Change() {
     extension_settings.live2d.characterModelsSettings[character][model_path]['mouth_linked_params']['param3']['maxValue'] = maxValue;
     saveSettingsDebounced();
     
-    // Также обновляем в live2d.js для использования в функции playTalk
-    const { updateMouthLinkedSettings } = await import('./live2d.js');
-    await updateMouthLinkedSettings(2, paramId, minValue, maxValue); // Index 2 для третьего параметра
-    
+    // БАГ 7 FIX: Удалены legacy вызовы updateMouthLinkedSettings - настройки теперь читаются напрямую из extension_settings
     console.debug(DEBUG_PREFIX, `Updated mouth-linked parameter 3 for ${character}/${model_path}: ${paramId} (${minValue} to ${maxValue})`);
 }
 

@@ -10,7 +10,8 @@ import { DEBUG_PREFIX, delay } from './constants.js';
 export {
     startBodyMovement,
     stopBodyMovement,
-    restartBodyMovement
+    restartBodyMovement,
+    cleanupBodyMovement
 };
 
 // Хранилище для состояний движения каждого персонажа
@@ -189,6 +190,13 @@ async function updateBodyMovement(character, model, settings) {
     // Обрабатываем каждый параметр
     const params = ['param1', 'param2', 'param3'];
     
+    // БАГ 5 FIX: Сохраняем текущие значения для корреляции (используем уже примененные значения)
+    const previousCurrentValues = {
+        param1: state.currentValues.param1,
+        param2: state.currentValues.param2,
+        param3: state.currentValues.param3
+    };
+    
     for (let i = 0; i < params.length; i++) {
         const paramKey = params[i];
         const paramSettings = settings.mouth_linked_params[paramKey];
@@ -212,12 +220,12 @@ async function updateBodyMovement(character, model, settings) {
             targetValue += state.impulses[paramKey].value * stateWeights.impulse;
         }
         
-        // Добавляем корреляцию между параметрами
+        // БАГ 5 FIX: Используем сохраненные значения для корреляции (синхронизировано)
         if (i === 1) { // param2 коррелирует с param1
-            targetValue += calculateCorrelation(state.targetValues.param1, 0.3);
+            targetValue += calculateCorrelation(previousCurrentValues.param1, 0.3);
         } else if (i === 2) { // param3 коррелирует с обоими
-            targetValue += calculateCorrelation(state.targetValues.param1, 0.2);
-            targetValue += calculateCorrelation(state.targetValues.param2, -0.15);
+            targetValue += calculateCorrelation(previousCurrentValues.param1, 0.2);
+            targetValue += calculateCorrelation(previousCurrentValues.param2, -0.15);
         }
         
         // Ограничиваем целевое значение
@@ -233,8 +241,16 @@ async function updateBodyMovement(character, model, settings) {
         const normalizedValue = (state.currentValues[paramKey] + 1) / 2; // От (-1,1) к (0,1)
         const finalValue = paramSettings.minValue + normalizedValue * (paramSettings.maxValue - paramSettings.minValue);
         
+        // БАГ 8 FIX: Безопасная проверка и применение параметра
         try {
-            model.internalModel.coreModel.setParameterValueById(paramSettings.paramId, finalValue);
+            if (model?.internalModel?.coreModel) {
+                model.internalModel.coreModel.setParameterValueById(paramSettings.paramId, finalValue);
+            } else {
+                // Модель уничтожена во время выполнения - прерываем обновление
+                console.debug(DEBUG_PREFIX, `Model destroyed during update for ${character}`);
+                state.isRunning = false;
+                return;
+            }
         } catch (error) {
             console.debug(DEBUG_PREFIX, `Error setting body parameter ${paramSettings.paramId}:`, error);
         }
@@ -281,14 +297,21 @@ async function bodyMovementLoop(character, model, model_path) {
     
     // Основной цикл
     while (state.isRunning) {
-        // Проверяем, что модель всё ещё существует
+        // БАГ 8 FIX: Проверяем, что модель всё ещё существует
         if (!model?.internalModel?.coreModel) {
             console.debug(DEBUG_PREFIX, `Model destroyed, stopping body movement for ${character}`);
+            state.isRunning = false;
             break;
         }
         
         // Обновляем движения
-        await updateBodyMovement(character, model, settings);
+        try {
+            await updateBodyMovement(character, model, settings);
+        } catch (error) {
+            console.debug(DEBUG_PREFIX, `Error in body movement update for ${character}:`, error);
+            state.isRunning = false;
+            break;
+        }
         
         // Ждём перед следующим обновлением
         await delay(UPDATE_INTERVAL_MS);
@@ -308,30 +331,58 @@ async function startBodyMovement(character, model, model_path) {
     
     const state = bodyMovementStates[character];
     
-    // Если уже запущено, не запускаем повторно
+    // БАГ 2 FIX: Проверяем, что цикл не запущен
     if (state.isRunning) {
         console.debug(DEBUG_PREFIX, `Body movement already running for ${character}`);
         return;
     }
     
-    // Запускаем основной цикл
-    bodyMovementLoop(character, model, model_path);
+    // БАГ 2 FIX: Запускаем цикл без await (фоновый процесс)
+    bodyMovementLoop(character, model, model_path).catch(error => {
+        console.debug(DEBUG_PREFIX, `Body movement loop error for ${character}:`, error);
+        state.isRunning = false;
+    });
 }
 
 async function stopBodyMovement(character) {
     const state = bodyMovementStates[character];
-    if (state) {
+    if (!state) return;
+    
+    console.debug(DEBUG_PREFIX, `Stopping body movement for ${character}`);
+    state.isRunning = false;
+    
+    // БАГ 6 FIX: Ждем подтверждения остановки с таймаутом
+    const maxWaitTime = UPDATE_INTERVAL_MS * 10; // Максимум 500мс ожидания
+    const startWait = Date.now();
+    
+    while (state.isRunning && (Date.now() - startWait) < maxWaitTime) {
+        await delay(UPDATE_INTERVAL_MS);
+    }
+    
+    if (state.isRunning) {
+        console.debug(DEBUG_PREFIX, `Force stopped body movement for ${character} (timeout)`);
         state.isRunning = false;
-        console.debug(DEBUG_PREFIX, `Stopping body movement for ${character}`);
-        
-        // Ждём немного, чтобы цикл завершился
-        await delay(UPDATE_INTERVAL_MS * 2);
     }
 }
 
 async function restartBodyMovement(character, model, model_path) {
+    // БАГ 2 & 6 FIX: Гарантируем полную остановку перед перезапуском
     await stopBodyMovement(character);
+    
+    // Дополнительная задержка для гарантии очистки
+    await delay(UPDATE_INTERVAL_MS);
+    
+    // Перезапускаем систему
     await startBodyMovement(character, model, model_path);
+}
+
+// БАГ 4 FIX: Функция очистки состояния персонажа
+export function cleanupBodyMovement(character) {
+    if (bodyMovementStates[character]) {
+        bodyMovementStates[character].isRunning = false;
+        delete bodyMovementStates[character];
+        console.debug(DEBUG_PREFIX, `Cleaned up body movement state for ${character}`);
+    }
 }
 
 // Экспортируем функцию для обновления состояния из playTalk

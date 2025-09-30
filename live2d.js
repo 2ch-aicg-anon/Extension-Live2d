@@ -18,7 +18,8 @@ import {
     startBodyMovement,
     stopBodyMovement,
     restartBodyMovement,
-    notifyMouthActivity
+    notifyMouthActivity,
+    cleanupBodyMovement
 } from './bodyMovement.js';
 
 export {
@@ -495,6 +496,9 @@ async function removeModel(character) {
         
         // Останавливаем систему движения тела
         await stopBodyMovement(character);
+        
+        // БАГ 4 FIX: Очищаем состояние движения тела из памяти
+        cleanupBodyMovement(character);
         
         models[character].destroy(true, true, true);
         delete models[character];
