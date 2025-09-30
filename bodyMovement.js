@@ -88,9 +88,8 @@ function generateImpulse(state, paramKey) {
     const now = Date.now();
     const timeSinceLastImpulse = now - state.lastImpulseTime[paramKey];
     
-    // Получаем настройки импульсов из UI
+    // Получаем настройку частоты импульсов из UI
     const impulseFrequency = extension_settings.live2d.bodyMovementImpulseChance || 2;
-    const impulseInertia = extension_settings.live2d.bodyMovementImpulseInertia || 0.92;
     const baseChance = impulseFrequency / 100; // Преобразуем проценты в вероятность
     
     // Настройки импульсов в зависимости от состояния
@@ -99,13 +98,13 @@ function generateImpulse(state, paramKey) {
         minInterval: 1000, // Минимум 1 секунда между импульсами
         amplitudeMin: 0.3,
         amplitudeMax: 0.8,
-        decayRate: impulseInertia // Используем настройку инерции
+        decayRate: 0.92 // Быстрое затухание
     } : {
         chance: baseChance * 0.25, // В idle импульсы реже
         minInterval: 3000, // Минимум 3 секунды между импульсами
         amplitudeMin: 0.1,
         amplitudeMax: 0.3,
-        decayRate: Math.min(impulseInertia + 0.03, 0.98) // В idle немного больше инерции, но не более 0.98
+        decayRate: 0.95 // Медленное затухание
     };
     
     // Проверяем, можем ли генерировать новый импульс

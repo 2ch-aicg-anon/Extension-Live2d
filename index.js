@@ -105,7 +105,6 @@ import {
     onBodyMovementTalkingIntensityChange,
     onBodyMovementImpulseChanceChange,
     onBodyMovementSmoothnessChange,
-    onBodyMovementImpulseInertiaChange,
     updateCharactersModels,
     updateCharactersList,
     updateCharactersListOnce,
@@ -177,7 +176,6 @@ const defaultSettings = {
     bodyMovementTalkingIntensity: 0.6,
     bodyMovementImpulseChance: 2,
     bodyMovementSmoothness: 0.85,
-    bodyMovementImpulseInertia: 0.92,
 };
 
 function loadSettings() {
@@ -255,9 +253,6 @@ function loadSettings() {
     if (extension_settings.live2d.bodyMovementSmoothness === undefined) {
         extension_settings.live2d.bodyMovementSmoothness = defaultSettings.bodyMovementSmoothness;
     }
-    if (extension_settings.live2d.bodyMovementImpulseInertia === undefined) {
-        extension_settings.live2d.bodyMovementImpulseInertia = defaultSettings.bodyMovementImpulseInertia;
-    }
 
     $('#live2d_enabled_checkbox').prop('checked', extension_settings.live2d.enabled);
     $('#live2d_follow_cursor_checkbox').prop('checked', extension_settings.live2d.followCursor);
@@ -303,8 +298,6 @@ function loadSettings() {
     $('#live2d_body_movement_impulse_chance_value').text(extension_settings.live2d.bodyMovementImpulseChance.toFixed(1));
     $('#live2d_body_movement_smoothness').val(extension_settings.live2d.bodyMovementSmoothness);
     $('#live2d_body_movement_smoothness_value').text(extension_settings.live2d.bodyMovementSmoothness.toFixed(2));
-    $('#live2d_body_movement_impulse_inertia').val(extension_settings.live2d.bodyMovementImpulseInertia);
-    $('#live2d_body_movement_impulse_inertia_value').text(extension_settings.live2d.bodyMovementImpulseInertia.toFixed(2));
 }
 
 //#############################//
@@ -477,7 +470,6 @@ jQuery(async () => {
     $('#live2d_body_movement_talking_intensity').on('input', onBodyMovementTalkingIntensityChange);
     $('#live2d_body_movement_impulse_chance').on('input', onBodyMovementImpulseChanceChange);
     $('#live2d_body_movement_smoothness').on('input', onBodyMovementSmoothnessChange);
-    $('#live2d_body_movement_impulse_inertia').on('input', onBodyMovementImpulseInertiaChange);
 
     // Module worker
     const wrapper = new ModuleWorkerWrapper(moduleWorker);
