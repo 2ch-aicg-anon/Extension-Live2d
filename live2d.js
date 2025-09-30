@@ -605,27 +605,40 @@ async function playTalk(character, text) {
     }
 	
 	is_talking[character] = true;
-	// Уведомляем систему движения тела о начале разговора
-	notifyMouthActivity(character, true);
 	
 	let startTime = Date.now();
 	const duration = text.length * mouth_time_per_character;
 	let turns = 0;
 	let mouth_y = 0;
+	let lastMouthActivityNotify = Date.now(); // Для периодической проверки активности
+	
+	// Уведомляем систему движения тела о начале разговора
+	notifyMouthActivity(character, true);
 	
 	// TTS Binding система (@4eckme)
 	window.live2d_tts_bind = false;
 	
-	// Основной цикл анимации рта
-	// ИСПРАВЛЕНО: убрали "|| true" чтобы цикл мог завершиться
-	while ((Date.now() - startTime) < duration) {
+	// Основной цикл анимации рта (оригинальный код @4eckme)
+	while ((Date.now() - startTime) < duration || true) { // @4eckme
 		
-		// TTS Binding: ждем сигнал от внешней TTS системы
+		// start @4eckme
 		model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, -100);
 		while (window.live2d_tts_bind === false) {
 			await delay(20);
+			
+			// КОСТЫЛЬ: Периодически проверяем, говорит ли еще персонаж
+			if (!is_talking[character]) {
+				console.debug(DEBUG_PREFIX, 'is_talking became false, exiting loop');
+				break;
+			}
 		}
+		// end @4eckme
 		
+		// Если is_talking стал false, выходим из цикла
+		if (!is_talking[character]) {
+			break;
+		}
+
 		if (abortTalking[character]) {
             console.debug(DEBUG_PREFIX,'Abort talking requested.');
             break;
@@ -640,6 +653,14 @@ async function playTalk(character, text) {
         mouth_y = Math.sin((Date.now() - startTime));
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, mouth_y);
         
+        // КОСТЫЛЬ: Периодически уведомляем Body Movement System что рот активен
+        // Это нужно потому что цикл бесконечный (|| true) и код после цикла не выполняется
+        const now = Date.now();
+        if (now - lastMouthActivityNotify > 100) { // Каждые 100мс обновляем статус
+        	notifyMouthActivity(character, true);
+        	lastMouthActivityNotify = now;
+        }
+        
         // Старая система прямой привязки параметров отключена
         // Теперь движения тела управляются системой bodyMovement.js
         // которая создаёт более естественные движения с шумом и инерцией
@@ -650,10 +671,12 @@ async function playTalk(character, text) {
 
     if (model?.internalModel?.coreModel !== undefined) {
         model.internalModel.coreModel.addParameterValueById(parameter_mouth_open_y_id, -100); // close mouth
-        
-        // Уведомляем систему движения тела о завершении разговора
-        notifyMouthActivity(character, false);
     }
+    
+    // КОСТЫЛЬ: Уведомляем систему движения тела о завершении разговора
+    // Это критически важно для возврата персонажа в idle режим
+    notifyMouthActivity(character, false);
+    
     is_talking[character] = false;
 }
 
