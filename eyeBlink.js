@@ -82,31 +82,43 @@ const BLINK_STATES = {
     FOCUSED: {      // Концентрация - реже моргает
         name: 'focused',
         intervalMultiplier: 1.4,  // +40% к интервалам
-        duration: { min: 15000, max: 45000 }  // 15-45 секунд
+        duration: { min: 8000, max: 25000 }  // 8-25 секунд (УМЕНЬШЕНО для частых смен)
     },
     RELAXED: {      // Расслабленное - нормальная частота
         name: 'relaxed',
         intervalMultiplier: 1.0,  // Базовая частота
-        duration: { min: 20000, max: 60000 }  // 20-60 секунд
+        duration: { min: 10000, max: 30000 }  // 10-30 секунд (УМЕНЬШЕНО)
     },
     DISTRACTED: {   // Отвлечённое - чаще моргает
         name: 'distracted',
         intervalMultiplier: 0.7,  // -30% к интервалам
-        duration: { min: 10000, max: 30000 }  // 10-30 секунд
+        duration: { min: 6000, max: 20000 }  // 6-20 секунд (УМЕНЬШЕНО)
     },
     TIRED: {        // Усталость - переменная частота
         name: 'tired',
         intervalMultiplier: 0.85, // Чуть чаще
-        duration: { min: 12000, max: 35000 }  // 12-35 секунд
+        duration: { min: 7000, max: 22000 }  // 7-22 секунд (УМЕНЬШЕНО)
+    },
+    HYPER: {        // Гиперактивность - очень часто моргает
+        name: 'hyper',
+        intervalMultiplier: 0.5,  // -50% к интервалам
+        duration: { min: 5000, max: 15000 }  // 5-15 секунд (короткие вспышки)
+    },
+    DROWSY: {       // Сонливость - очень медленно
+        name: 'drowsy',
+        intervalMultiplier: 1.6,  // +60% к интервалам
+        duration: { min: 8000, max: 20000 }  // 8-20 секунд
     }
 };
 
 // Вероятности переходов между состояниями (создают непредсказуемость)
 const STATE_WEIGHTS = {
-    FOCUSED: 0.20,      // 20% - концентрация
-    RELAXED: 0.50,      // 50% - расслабленное (базовое)
+    FOCUSED: 0.15,      // 15% - концентрация
+    RELAXED: 0.35,      // 35% - расслабленное (базовое)
     DISTRACTED: 0.20,   // 20% - отвлечённое
-    TIRED: 0.10         // 10% - усталость
+    TIRED: 0.12,        // 12% - усталость
+    HYPER: 0.10,        // 10% - гиперактивность (частые моргания)
+    DROWSY: 0.08        // 8% - сонливость (редкие моргания)
 };
 
 // Структура для хранения состояния моргания персонажа
@@ -175,26 +187,65 @@ class EyeBlinkState {
     }
     
     // Генерация случайного интервала между морганиями
-    // Использует нормальное распределение + динамический модификатор состояния
+    // МАКСИМАЛЬНО НЕПРЕДСКАЗУЕМАЯ система - смесь распределений и случайных "выбросов"
     getRandomInterval() {
-        // Используем Box-Muller transform для нормального распределения
-        const u1 = Math.random();
-        const u2 = Math.random();
-        const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        // 15% шанс "выброса" - радикально другой интервал для непредсказуемости
+        if (Math.random() < 0.15) {
+            const outlierType = Math.random();
+            
+            if (outlierType < 0.4) {
+                // 40% выбросов - ОЧЕНЬ БЫСТРОЕ моргание (почти сразу после предыдущего)
+                const fastBlink = 800 + Math.random() * 1200; // 0.8-2 секунды
+                console.debug(DEBUG_PREFIX, `${this.character}: OUTLIER - fast blink (${Math.round(fastBlink)}ms)`);
+                return fastBlink;
+            } else if (outlierType < 0.7) {
+                // 30% выбросов - ОЧЕНЬ ДОЛГАЯ пауза (концентрация, транс)
+                const longPause = 7000 + Math.random() * 5000; // 7-12 секунд
+                console.debug(DEBUG_PREFIX, `${this.character}: OUTLIER - long pause (${Math.round(longPause)}ms)`);
+                return longPause;
+            } else {
+                // 30% выбросов - средние "странные" интервалы
+                const weirdInterval = 2500 + Math.random() * 2000; // 2.5-4.5 секунды
+                return weirdInterval;
+            }
+        }
         
-        // Базовые параметры распределения
-        const mean = BLINK_INTERVAL_AVERAGE;
-        const stdDev = (BLINK_INTERVAL_MAX - BLINK_INTERVAL_MIN) / 6; // ~95% в пределах min-max
+        // 85% времени - используем смешанное распределение для БОЛЬШОЙ вариативности
+        const distributionChoice = Math.random();
+        let interval;
         
-        let interval = mean + z * stdDev;
+        if (distributionChoice < 0.4) {
+            // 40% - экспоненциальное распределение (много коротких, мало длинных)
+            const lambda = 0.3;
+            const u = Math.random();
+            const exponential = -Math.log(1 - u) / lambda;
+            interval = BLINK_INTERVAL_MIN + exponential * 1000;
+        } else if (distributionChoice < 0.7) {
+            // 30% - равномерное распределение (полная случайность)
+            interval = BLINK_INTERVAL_MIN + Math.random() * (BLINK_INTERVAL_MAX - BLINK_INTERVAL_MIN);
+        } else {
+            // 30% - нормальное распределение (классическое)
+            const u1 = Math.random();
+            const u2 = Math.random();
+            const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+            
+            const mean = BLINK_INTERVAL_AVERAGE;
+            const stdDev = (BLINK_INTERVAL_MAX - BLINK_INTERVAL_MIN) / 4; // Увеличили разброс
+            
+            interval = mean + z * stdDev;
+        }
         
-        // Применяем модификатор текущего состояния (для непредсказуемости)
+        // Применяем модификатор текущего состояния
         if (this.currentState) {
             interval *= this.currentState.intervalMultiplier;
         }
         
-        // Ограничиваем диапазон
-        interval = Math.max(BLINK_INTERVAL_MIN, Math.min(BLINK_INTERVAL_MAX, interval));
+        // Добавляем финальный "джиттер" ±15% для устранения паттернов
+        const jitter = 0.85 + Math.random() * 0.3; // 0.85-1.15
+        interval *= jitter;
+        
+        // Ограничиваем диапазон (но позволяем выход за пределы на 10%)
+        interval = Math.max(BLINK_INTERVAL_MIN * 0.9, Math.min(BLINK_INTERVAL_MAX * 1.1, interval));
         
         return interval;
     }
@@ -577,8 +628,8 @@ async function eyeBlinkLoop(character, model, model_path) {
             }
         }
         
-        // Задержка перед следующей проверкой (увеличена для микродвижений)
-        await delay(200);
+        // Задержка перед следующей проверкой (уменьшена для точности)
+        await delay(50);
     }
     
     state.isRunning = false;
